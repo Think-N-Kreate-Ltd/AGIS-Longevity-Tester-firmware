@@ -20,17 +20,27 @@ bool motorState = true;    // for checking the motor is moving Up or Down, ture=
 uint32_t recordTime;       // for record the time of motor 
 uint32_t startTime = millis();      // for record the starting time of the test 
 
+bool pauseState = false;    // will pause the test will it goes to true
+
 /*-----------------var for user inputs-----------------*/
 
-int16_t PWM_P1UP = 255;     // PWM of motor, postitve=move up, negetive=move down
-int16_t PWM_P1DOWN = -153;  // PWM of motor, postitve=move up, negetive=move down
-int16_t PWM_P2UP = 102;     // PWM of motor, postitve=move up, negetive=move down
-int16_t PWM_P2DOWN = -102;  // PWM of motor, postitve=move up, negetive=move down
-bool pauseState = false;    // will pause the test will it goes to true
+int16_t PWM_P1UP = 255;     // PWM of motor of pattern 1 move up, postitve=move up, negetive=move down
+int16_t PWM_P1DOWN = -153;  // PWM of motor of pattern 1 move down, postitve=move up, negetive=move down
+int16_t PWM_P2UP = 102;     // PWM of motor of pattern 2 move up, postitve=move up, negetive=move down
+int16_t PWM_P2DOWN = -102;  // PWM of motor of pattern 2 move down, postitve=move up, negetive=move down
+
+uint8_t numTime_P1 = 3;     // no. of time that pattern 1 run as a cycle, should multiply by 2 and subtract by 1
+uint8_t numTime_P2 = 7;     // no. of time that pattern 2 run as a cycle, should multiply by 2 and subtract by 1
+
+uint8_t T_OUT_P1UP = 10;    // timeout of motor of pattern 1 move up
+uint8_t T_OUT_P1DOWN = 7;   // timeout of motor of pattern 1 move down
+uint8_t T_OUT_P2UP = 2;     // timeout of motor of pattern 2 move up
+uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
 
 // Function prototypes
 // bool limitSwitchTouched(ezButton limitSwitch);
 void pauseAll(bool state);
+void stopTest(uint8_t timeout, uint16_t time);
 void motorOn(int PWM);
 void motorP1(uint8_t time=3);
 void motorP2(uint8_t time=7);
@@ -59,10 +69,10 @@ void setup() {
 }
 
 void loop() {
-  if (print) {
-    Serial.printf("Up:%d, Down:%d\n", limitSwitch_Up.getStateRaw(), limitSwitch_Down.getStateRaw());
-    print = false;
-  }
+  // if (print) {
+  //   Serial.printf("Up:%d, Down:%d\n", limitSwitch_Up.getStateRaw(), limitSwitch_Down.getStateRaw());
+  //   print = false;
+  // }
 }
 
 // bool limitSwitchTouched(ezButton limitSwitch) {
@@ -84,7 +94,24 @@ void pauseAll(bool state) {
     // when resume, record the time again
     startTime += millis() - recordTime;
   }
-  
+}
+
+// when timeout, stop the test
+// timeout = timeout set bt users
+// time = the last record time
+void stopTest(uint8_t timeout, uint16_t time) {
+  if ((millis()-time) >= (timeout*1000)) {
+    motorHoming = true;
+    while (motorHoming) {
+      vTaskDelay(200);
+    }
+    Serial.println("homing completed, all stopped");
+
+    // all finish after homing
+    // TODO: think how to stop it in a better way
+    recordTime = millis();
+    vTaskDelay(UINT_MAX); 
+  }
 }
 
 // move the motor
@@ -106,18 +133,23 @@ void motorOn(int PWM) {
 // time is the number of time that motor On/Down should run, default is 3
 void motorP1(uint8_t time) {
   static bool state = true; // motor move up first
+  static uint16_t recTime;
   if (state) {
     motorOn(PWM_P1UP);
+    recTime = millis();
     do {
       vTaskDelay(20);
       pauseAll(pauseState);
+      stopTest(T_OUT_P1UP, recTime);
     } while (limitSwitch_Up.getStateRaw() == 1);
     state = false;  // motor move down
   } else {
     motorOn(PWM_P1DOWN);
+    recTime = millis();
     do {
       vTaskDelay(20);
       pauseAll(pauseState);
+      stopTest(T_OUT_P1DOWN, recTime);
     } while (limitSwitch_Down.getStateRaw() == 1);
     state = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
@@ -134,13 +166,16 @@ void motorP1(uint8_t time) {
 // time is the number of time that motor On/Down should run, default is 7
 void motorP2(uint8_t time) {
   static bool state = true; // motor move up first
+  static uint16_t recTime;
   if (state) {
     motorOn(PWM_P2UP);
+    recTime = millis();
     vTaskDelay(20);
       for (uint8_t i=0; i<50; ++i) { // total delay for 20*50=1000ms
         if (limitSwitch_Up.getStateRaw() == 1) {
           vTaskDelay(20);
           pauseAll(pauseState);
+          stopTest(T_OUT_P2UP, recTime);
         } else {
           i=50; // if touch limit SW, directory go to next state
         }
@@ -148,9 +183,11 @@ void motorP2(uint8_t time) {
     state = false;  // motor move down
   } else {
     motorOn(PWM_P2DOWN);
+    recTime = millis();
     do {
       vTaskDelay(20);
       pauseAll(pauseState);
+      stopTest(T_OUT_P2DOWN, recTime);
     } while (limitSwitch_Down.getStateRaw() == 1);
     state = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
@@ -168,8 +205,8 @@ void motorCycle(void * arg) {
   }
   Serial.println("homing completed");
   for (;;) {
-    motorP1();
-    motorP2();
+    motorP1(numTime_P1);
+    motorP2(numTime_P2);
   }
 }
 
