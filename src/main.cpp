@@ -35,7 +35,7 @@ uint8_t numTime_P1 = 3;     // no. of time that pattern 1 run as a cycle, should
 uint8_t numTime_P2 = 7;     // no. of time that pattern 2 run as a cycle, should multiply by 2 and subtract by 1
 
 uint8_t T_OUT_P1UP = 10;    // timeout of motor of pattern 1 move up
-uint8_t T_OUT_P1DOWN = 7;   // timeout of motor of pattern 1 move down
+uint8_t T_OUT_P1DOWN = 10;  // timeout of motor of pattern 1 move down
 uint8_t T_OUT_P2UP = 2;     // timeout of motor of pattern 2 move up
 uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
 
@@ -46,8 +46,9 @@ float avgCurrent_mA;  // the average current in pass second, unit=mA
 
 /*------------------function protypes------------------*/
 
+void stopTest();
 void pauseAll(bool state);
-void stopTest(uint8_t timeout, uint32_t time);
+void timeoutCheck(uint8_t timeout, uint32_t time);
 void motorOn(int PWM);
 void motorP1(uint8_t time=3);
 void motorP2(uint8_t time=7);
@@ -61,7 +62,7 @@ void getI2CData(void * arg);
 void setup() {
   Serial.begin(115200);
 
-  ina219SetUp();
+  // ina219SetUp();
 
   /*Create a task for running motor up and down continuously */
   xTaskCreate(motorCycle,
@@ -80,12 +81,12 @@ void setup() {
               NULL);          // task handle
 
   // I2C is too slow that cannot use interrupt
-  xTaskCreate(getI2CData,     // function that should be called
-              "Get I2C Data", // name of the task (debug use)
-              4096,           // stack size
-              NULL,           // parameter to pass
-              1,              // task priority, 0-24, 24 highest priority
-              NULL);          // task handle
+  // xTaskCreate(getI2CData,     // function that should be called
+  //             "Get I2C Data", // name of the task (debug use)
+  //             4096,           // stack size
+  //             NULL,           // parameter to pass
+  //             1,              // task priority, 0-24, 24 highest priority
+  //             NULL);          // task handle
 }
 
 void loop() {
@@ -101,6 +102,20 @@ void loop() {
 //   if (limitSwitch.getState()) return false; // untouched
 //   else return true;                         // touched
 // }
+
+void stopTest() {
+  motorHoming = true;
+  while (motorHoming) {
+    vTaskDelay(200);
+  }
+  Serial.println("homing completed, all stopped");
+
+  // all finish after homing
+  // TODO: think how to stop it, now cannot stop for current problem
+  recordTime = millis();
+  Serial.println(recordTime);
+  vTaskDelay(UINT_MAX); 
+}
 
 // pause the test
 // do not want to use sleep as it is harmful to the program
@@ -120,18 +135,9 @@ void pauseAll(bool state) {
 // when timeout, stop the test
 // timeout = timeout set bt users
 // time = the last record time
-void stopTest(uint8_t timeout, uint32_t time) {
+void timeoutCheck(uint8_t timeout, uint32_t time) {
   if ((millis()-time) >= (timeout*1000)) {
-    motorHoming = true;
-    while (motorHoming) {
-      vTaskDelay(200);
-    }
-    Serial.println("homing completed, all stopped");
-
-    // all finish after homing
-    // TODO: think how to stop it in a better way
-    recordTime = millis();
-    vTaskDelay(UINT_MAX); 
+    stopTest();
   }
 }
 
@@ -158,19 +164,21 @@ void motorP1(uint8_t time) {
   if (state) {
     motorOn(PWM_P1UP);
     recTime = millis();
+    TT = recTime;
     do {
       vTaskDelay(20);
       pauseAll(pauseState);
-      stopTest(T_OUT_P1UP, recTime);
+      timeoutCheck(T_OUT_P1UP, recTime);
     } while (limitSwitch_Up.getStateRaw() == 1);
     state = false;  // motor move down
   } else {
     motorOn(PWM_P1DOWN);
     recTime = millis();
+    TT = recTime;
     do {
       vTaskDelay(20);
       pauseAll(pauseState);
-      stopTest(T_OUT_P1DOWN, recTime);
+      timeoutCheck(T_OUT_P1DOWN, recTime);
     } while (limitSwitch_Down.getStateRaw() == 1);
     state = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
@@ -191,12 +199,13 @@ void motorP2(uint8_t time) {
   if (state) {
     motorOn(PWM_P2UP);
     recTime = millis();
+    TT = recTime;
     vTaskDelay(20);
       for (uint8_t i=0; i<50; ++i) { // total delay for 20*50=1000ms
         if (limitSwitch_Up.getStateRaw() == 1) {
           vTaskDelay(20);
           pauseAll(pauseState);
-          stopTest(T_OUT_P2UP, recTime);
+          timeoutCheck(T_OUT_P2UP, recTime);
         } else {
           i=50; // if touch limit SW, directory go to next state
         }
@@ -205,10 +214,11 @@ void motorP2(uint8_t time) {
   } else {
     motorOn(PWM_P2DOWN);
     recTime = millis();
+    TT = recTime;
     do {
       vTaskDelay(20);
       pauseAll(pauseState);
-      stopTest(T_OUT_P2DOWN, recTime);
+      timeoutCheck(T_OUT_P2DOWN, recTime);
     } while (limitSwitch_Down.getStateRaw() == 1);
     state = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
@@ -254,5 +264,9 @@ void getI2CData(void * arg) {
   for (;;) {
     // get current data every second
     getCurrent();
+    if (avgCurrent_mA >= 150) {
+      stopTest();
+      Serial.println(avgCurrent_mA);
+    }
   }
 }
