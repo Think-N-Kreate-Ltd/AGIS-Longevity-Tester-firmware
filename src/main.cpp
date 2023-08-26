@@ -342,9 +342,10 @@ void enableWifi(void * arg) {
     strftime(dateTime, 64, "%d %b, %y %H:%M:%S", &timeinfo);
     vTaskDelay(1000);
   }
+
   //disconnect WiFi
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
 
-  // vTaskDelete(NULL);  // delete itself
+  vTaskDelete(NULL);  // delete itself
 }
