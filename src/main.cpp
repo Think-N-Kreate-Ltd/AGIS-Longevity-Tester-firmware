@@ -3,6 +3,7 @@
 #include <TESTER_INA219.h>
 
 bool print = true;
+long TT;
 
 /*-------------------define for pins-------------------*/
 
@@ -18,8 +19,8 @@ ezButton limitSwitch_Down(38); // create ezButton object that attach to pin 38
 
 volatile bool motorHoming = true;   // will directly go to homing when true
 bool motorState = true;    // for checking the motor is moving Up or Down, ture=Up
-uint32_t recordTime;       // for record the time of motor 
-uint32_t startTime = millis();      // for record the starting time of the test 
+uint64_t recordTime;       // for record the time of motor 
+uint64_t startTime = millis();      // for record the starting time of the test 
 
 bool pauseState = false;    // will pause the test will it goes to true
 
@@ -46,7 +47,7 @@ float avgCurrent_mA;  // the average current in pass second, unit=mA
 /*------------------function protypes------------------*/
 
 void pauseAll(bool state);
-void stopTest(uint8_t timeout, uint16_t time);
+void stopTest(uint8_t timeout, uint32_t time);
 void motorOn(int PWM);
 void motorP1(uint8_t time=3);
 void motorP2(uint8_t time=7);
@@ -89,7 +90,7 @@ void setup() {
 
 void loop() {
   if (print) {
-    Serial.printf("Up:%d, Down:%d\n", limitSwitch_Up.getStateRaw(), limitSwitch_Down.getStateRaw());
+    Serial.printf("record time: %d\n", TT);
     Serial.printf("average current: %f\n", avgCurrent_mA);
     print = false;
   }
@@ -119,7 +120,7 @@ void pauseAll(bool state) {
 // when timeout, stop the test
 // timeout = timeout set bt users
 // time = the last record time
-void stopTest(uint8_t timeout, uint16_t time) {
+void stopTest(uint8_t timeout, uint32_t time) {
   if ((millis()-time) >= (timeout*1000)) {
     motorHoming = true;
     while (motorHoming) {
@@ -153,7 +154,7 @@ void motorOn(int PWM) {
 // time is the number of time that motor On/Down should run, default is 3
 void motorP1(uint8_t time) {
   static bool state = true; // motor move up first
-  static uint16_t recTime;
+  static uint32_t recTime;
   if (state) {
     motorOn(PWM_P1UP);
     recTime = millis();
@@ -186,7 +187,7 @@ void motorP1(uint8_t time) {
 // time is the number of time that motor On/Down should run, default is 7
 void motorP2(uint8_t time) {
   static bool state = true; // motor move up first
-  static uint16_t recTime;
+  static uint32_t recTime;
   if (state) {
     motorOn(PWM_P2UP);
     recTime = millis();
