@@ -111,7 +111,7 @@ void setup() {
 void loop() {
   if (print) {
     Serial.printf("record time: %d\n", TT);
-    Serial.printf(dateTime);
+    Serial.println(dateTime);
     print = false;
   }
 }

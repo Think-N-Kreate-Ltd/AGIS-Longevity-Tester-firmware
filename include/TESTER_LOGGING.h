@@ -4,6 +4,8 @@
 #include <LittleFS.h>
 #include "FS.h"
 
+extern char dateTime[64];
+
 /*----------function that example provided (decrecated)----------*/
 
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels);

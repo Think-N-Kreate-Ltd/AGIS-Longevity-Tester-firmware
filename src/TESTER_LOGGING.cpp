@@ -95,11 +95,14 @@ void writeFile2(fs::FS &fs, const char * path, const char * message){
   file.close();
 }
 
+// create new file and write the info+title
 void newFileInit() {
-  // TODO: connect to wifi
-  // TODO: get time
-  // TODO: create new file and write 1st line
-  // TODO: disconnect wifi
+  char filename[64];
+  char firstLine[64];
+  sprintf(filename, "/data/%s.csv", dateTime);
+  sprintf(firstLine, ""); // TODO: think about the first line, should be 2 line (info, title)
+
+  writeFile2(LittleFS, filename, firstLine);
 }
 
 void logData() {
