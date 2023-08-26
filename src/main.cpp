@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <ezButton.h>
+#include <WiFi.h>
 #include <TESTER_INA219.h>
+#include <TESTER_LOGGING.h>
 
 bool print = true;
 long TT;
@@ -43,6 +45,8 @@ uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
 
 float current_mA;     // the current at a specific time, unit=mA
 float avgCurrent_mA;  // the average current in pass second, unit=mA
+bool testState = false; // true after user finish input and start, until homing finish
+char dateTime[64];    // string to store the start date and time
 
 /*------------------function protypes------------------*/
 
@@ -58,11 +62,11 @@ void motorP2(uint8_t time=7);
 void motorCycle(void * arg);
 void homingRollerClamp(void * arg);
 void getI2CData(void * arg);
+void loggingData(void * parameter);
+void enableWifi(void * arg);
 
 void setup() {
   Serial.begin(115200);
-
-  // ina219SetUp();
 
   /*Create a task for running motor up and down continuously */
   xTaskCreate(motorCycle,
@@ -87,21 +91,32 @@ void setup() {
   //             NULL,           // parameter to pass
   //             1,              // task priority, 0-24, 24 highest priority
   //             NULL);          // task handle
+
+  /*Create a task for data logging*/
+  xTaskCreate(loggingData,       /* Task function. */
+              "Data Logging",    /* String with name of task. */
+              4096,              /* Stack size in bytes. */
+              NULL,              /* Parameter passed as input of the task */
+              4,                 /* Priority of the task. */
+              NULL);             /* Task handle. */
+  
+  xTaskCreate(enableWifi,     // function that should be called
+              "Enable WiFi",  // name of the task (debug use)
+              4096,           // stack size
+              NULL,           // parameter to pass
+              20,             // task priority, 0-24, 24 highest priority
+              NULL);          // task handle
 }
 
 void loop() {
   if (print) {
     Serial.printf("record time: %d\n", TT);
-    Serial.printf("average current: %f\n", avgCurrent_mA);
+    Serial.printf(dateTime);
     print = false;
   }
 }
 
-// bool limitSwitchTouched(ezButton limitSwitch) {
-//   limitSwitch.loop();
-//   if (limitSwitch.getState()) return false; // untouched
-//   else return true;                         // touched
-// }
+/*------------------function protypes------------------*/
 
 void stopTest() {
   motorHoming = true;
@@ -230,6 +245,8 @@ void motorP2(uint8_t time) {
   }
 }
 
+/*--------------------task functions--------------------*/
+
 void motorCycle(void * arg) {
   while (motorHoming) {
     vTaskDelay(20);
@@ -261,6 +278,7 @@ void homingRollerClamp(void * arg) {
 }
 
 void getI2CData(void * arg) {
+  ina219SetUp();
   for (;;) {
     // get current data every second
     getCurrent();
@@ -269,4 +287,64 @@ void getI2CData(void * arg) {
       Serial.println(avgCurrent_mA);
     }
   }
+}
+
+void loggingData(void * parameter) {
+  // set up, only run once
+  // rmOldData(); // move to `enableWifi` as this is not needed with no wifi connection
+  static bool finishLogging = false;
+
+  for (;;) {
+    if (testState) {
+      newFileInit();  // create new file and header
+      Serial.println("Logging initialized");
+      
+      // after create file, do data logging
+      while (testState)  {
+        logData();
+      }
+
+      finishLogging = true;
+    }
+
+    // only run once when finish
+    if (finishLogging) {
+      while (motorHoming) {
+        // wait for homing complete to log the last data
+        vTaskDelay(200);
+      }
+      endLogging();
+      testState = false;
+      finishLogging = false;
+    }
+
+    vTaskDelay(500);
+  }
+}
+
+void enableWifi(void * arg) {
+  // try to connect to wifi
+  WiFi.begin("TP-Link_TNK", "wluxe1907");
+  while (WiFi.status() != WL_CONNECTED) {
+    vTaskDelay(1000);
+  }
+
+  // config time logging with NTP server
+  configTime(28800, 0, "pool.ntp.org");  // 60x60x8=28800, +8h for Hong Kong
+
+  while (!testState) {  // when user inputting
+    // get time
+    struct tm timeinfo;
+    while (!getLocalTime(&timeinfo)) {
+      Serial.println("Fail to obtain time");
+      vTaskDelay(UINT_MAX); // stop here if fail to get the time
+    }
+    strftime(dateTime, 64, "%d %b, %y %H:%M:%S", &timeinfo);
+    vTaskDelay(1000);
+  }
+  //disconnect WiFi
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+
+  // vTaskDelete(NULL);  // delete itself
 }
