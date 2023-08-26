@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ezButton.h>
+#include <TESTER_INA219.h>
 
 bool print = true;
 
@@ -37,18 +38,29 @@ uint8_t T_OUT_P1DOWN = 7;   // timeout of motor of pattern 1 move down
 uint8_t T_OUT_P2UP = 2;     // timeout of motor of pattern 2 move up
 uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
 
-// Function prototypes
-// bool limitSwitchTouched(ezButton limitSwitch);
+/*-------------------var for display-------------------*/
+
+float current_mA;     // the current at a specific time, unit=mA
+float avgCurrent_mA;  // the average current in pass second, unit=mA
+
+/*------------------function protypes------------------*/
+
 void pauseAll(bool state);
 void stopTest(uint8_t timeout, uint16_t time);
 void motorOn(int PWM);
 void motorP1(uint8_t time=3);
 void motorP2(uint8_t time=7);
+
+/*--------------------task functions--------------------*/
+
 void motorCycle(void * arg);
 void homingRollerClamp(void * arg);
+void getI2CData(void * arg);
 
 void setup() {
   Serial.begin(115200);
+
+  ina219SetUp();
 
   /*Create a task for running motor up and down continuously */
   xTaskCreate(motorCycle,
@@ -66,13 +78,21 @@ void setup() {
               13,             // task priority, 0-24, 24 highest priority
               NULL);          // task handle
 
+  // I2C is too slow that cannot use interrupt
+  xTaskCreate(getI2CData,     // function that should be called
+              "Get I2C Data", // name of the task (debug use)
+              4096,           // stack size
+              NULL,           // parameter to pass
+              1,              // task priority, 0-24, 24 highest priority
+              NULL);          // task handle
 }
 
 void loop() {
-  // if (print) {
-  //   Serial.printf("Up:%d, Down:%d\n", limitSwitch_Up.getStateRaw(), limitSwitch_Down.getStateRaw());
-  //   print = false;
-  // }
+  if (print) {
+    Serial.printf("Up:%d, Down:%d\n", limitSwitch_Up.getStateRaw(), limitSwitch_Down.getStateRaw());
+    Serial.printf("average current: %f\n", avgCurrent_mA);
+    print = false;
+  }
 }
 
 // bool limitSwitchTouched(ezButton limitSwitch) {
@@ -226,5 +246,12 @@ void homingRollerClamp(void * arg) {
     }
 
     vTaskDelay(50);
+  }
+}
+
+void getI2CData(void * arg) {
+  for (;;) {
+    // get current data every second
+    getCurrent();
   }
 }
