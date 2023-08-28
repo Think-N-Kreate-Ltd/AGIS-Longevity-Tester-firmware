@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <ezButton.h>
 #include <SPI.h>
-#include <display.h>
+#include <Tester_Display.h>
 #include <ui.h>
 
 #define MOTOR_CTRL_PIN_1 15 // Motorl Control Board PWM 1
@@ -43,22 +43,6 @@ void setup() {
 }
 
 void loop() {
-  //TODO: cleanup
-//   if (limitSwitchTouched(limitSwitch_Up)) {
-//     Serial.printf("Up Touched\n");
-//   }
-// //   else {
-// //     Serial.printf("Up Untouched\n");
-// //   }
-
-//   if (limitSwitchTouched(limitSwitch_Down)) {
-//     Serial.printf("Down Touched\n");
-//   }
-//   else {
-//     Serial.printf("Down Untouched\n");
-//   }
-  
-//   delay(200);
 }
 
 bool limitSwitchTouched(ezButton limitSwitch) {
