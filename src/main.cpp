@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include <ezButton.h>
+#include <SPI.h>
+#include <display.h>
+#include <ui.h>
 
 #define MOTOR_CTRL_PIN_1 15 // Motorl Control Board PWM 1
 #define MOTOR_CTRL_PIN_2 16 // Motorl Control Board PWM 2
@@ -15,9 +18,12 @@ void motorUpAndDownTask(void * arg);
 void motorOnUp();
 void motorOnDown();
 void motorOff();
+void tftDisplay(void * arg);
 
 void setup() {
   Serial.begin(115200);
+
+  pinMode(TFT_CS, OUTPUT);
 
   /*Create a task for running motor up and down continuously */
   xTaskCreate(motorUpAndDownTask,
@@ -27,9 +33,17 @@ void setup() {
               24,  // highest priority task
               NULL);
 
+  // Create a task for TFT display
+  xTaskCreate(tftDisplay,       // function that should be called
+              "TFT display",    // name of the task (debug use)
+              4096,             // stack size
+              NULL,             // parameter to pass
+              3,                // task priority, 0-24, 24 highest priority
+              NULL);            // task handle
 }
 
 void loop() {
+  //TODO: cleanup
 //   if (limitSwitchTouched(limitSwitch_Up)) {
 //     Serial.printf("Up Touched\n");
 //   }
@@ -103,5 +117,15 @@ void motorUpAndDownTask(void * arg) {
     motorOff();
     
     vTaskDelay(10);
+  }
+}
+
+void tftDisplay(void * arg) {
+  display_init();
+  ui_init();
+
+  for(;;) {
+    lv_timer_handler(); // Should be call periodically
+    vTaskDelay(5);      // The timing is not critical but it should be about 5 milliseconds to keep the system responsive
   }
 }
