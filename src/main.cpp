@@ -6,6 +6,7 @@
 #include <SPI.h>
 #include <Tester_Display.h>
 #include <ui.h>
+#include <Tester_common.h>
 
 bool print = true;
 long TT;

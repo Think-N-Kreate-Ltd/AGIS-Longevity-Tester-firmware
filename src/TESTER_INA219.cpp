@@ -1,6 +1,7 @@
 #include <TESTER_INA219.h>
 #include <Wire.h>
 #include <Adafruit_INA219.h>
+#include <Tester_common.h>
 
 #define ARRAYLENGTH 33
 

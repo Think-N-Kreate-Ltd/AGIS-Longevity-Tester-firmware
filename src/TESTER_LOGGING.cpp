@@ -1,4 +1,5 @@
 #include <TESTER_LOGGING.h>
+#include <Tester_common.h>
 
 char filename[16];
 
