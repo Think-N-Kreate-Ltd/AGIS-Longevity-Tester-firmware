@@ -97,15 +97,15 @@ void writeFile2(fs::FS &fs, const char * path, const char * message){
 
 // create new file and write the info+title
 void newFileInit() {
-  char filename[64];
+  char filename[16];
   char firstLine[64];
-  sprintf(filename, "/data/%s.csv", dateTime);
-  sprintf(firstLine, ""); // TODO: think about the first line, should be 2 line (info, title)
+  sprintf(filename, "/data/%d.csv", sampleId);
+  sprintf(firstLine, "sample id:, %d, start time:, %s, \nTime:, Cycle Time, Current:\n", sampleId, dateTime);
 
   writeFile2(LittleFS, filename, firstLine);
 }
 
-void logData() {
+void logData(uint8_t time) {
   // TODO: log data
   // TODO: delay
   // TODO: change state when need to finish
