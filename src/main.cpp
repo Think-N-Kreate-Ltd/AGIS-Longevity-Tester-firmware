@@ -272,6 +272,12 @@ void motorCycle(void * arg) {
     vTaskDelay(20);
   }
   Serial.println("homing completed");
+
+  // debug use
+  vTaskDelay(5000);
+  testState = true;
+  Serial.println("Start test");
+
   for (;;) {
     static uint64_t recTime = millis();
     motorP1(numTime_P1);
