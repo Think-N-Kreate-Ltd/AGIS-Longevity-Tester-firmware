@@ -1,5 +1,7 @@
 #include <TESTER_LOGGING.h>
 
+char filename[16];
+
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
   Serial.printf("Listing directory: %s\r\n", dirname);
 
@@ -95,19 +97,37 @@ void writeFile2(fs::FS &fs, const char * path, const char * message){
   file.close();
 }
 
+void appendFile(fs::FS &fs, const char * path, const char * message){
+  Serial.printf("Appending to file: %s\r\n", path);
+
+  File file = fs.open(path, "a");
+  if (!file) {
+    Serial.println("- failed to open file for appending");
+    return;
+  }
+  if (file.print(message)) {
+    Serial.println("- message appended");
+  } else {
+    Serial.println("- append failed");
+  }
+  file.close();
+}
+
 // create new file and write the info+title
 void newFileInit() {
-  char filename[64];
   char firstLine[64];
-  sprintf(filename, "/data/%s.csv", dateTime);
-  sprintf(firstLine, ""); // TODO: think about the first line, should be 2 line (info, title)
+  sprintf(filename, "/data/%08d.csv", sampleId);
+  sprintf(firstLine, "sample id:, %d, start time:, %s, \nTime:, Cycle Time, Current:\n", sampleId, dateTime);
 
   writeFile2(LittleFS, filename, firstLine);
 }
 
-void logData() {
-  // TODO: log data
-  // TODO: delay
+// do whenever the limited SW is touched
+void logData(uint8_t time) {
+  char data[64];  // the data that should log to file
+  sprintf(data, "%02d %02d:%02d:%02d, N/A, %f", motorRunTime/86400, motorRunTime%86400/3600, 
+          motorRunTime%3600/60, motorRunTime%60, );
+  appendFile(LittleFS, filename, "");
   // TODO: change state when need to finish
 }
 

@@ -4,7 +4,9 @@
 #include <LittleFS.h>
 #include "FS.h"
 
+extern uint64_t sampleId = 12345678;
 extern char dateTime[64];
+uint64_t motorRunTime;
 
 /*----------function that example provided (decrecated)----------*/
 
@@ -12,11 +14,12 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels);
 void readFile(fs::FS &fs, const char * path);
 void writeFile(fs::FS &fs, const char * path, const char * message);
 void writeFile2(fs::FS &fs, const char * path, const char * message);
+void appendFile(fs::FS &fs, const char * path, const char * message);
 
 /*-------------------function that self added-------------------*/
 
 void newFileInit();
-void logData();
+void logData(uint8_t time);
 void endLogging();
 
 /*------------function only use for fixing FS problem------------*/

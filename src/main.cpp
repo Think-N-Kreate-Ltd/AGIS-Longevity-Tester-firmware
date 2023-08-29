@@ -41,12 +41,16 @@ uint8_t T_OUT_P1DOWN = 10;  // timeout of motor of pattern 1 move down
 uint8_t T_OUT_P2UP = 2;     // timeout of motor of pattern 2 move up
 uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
 
+uint64_t sampleId = 12345678;  // the sample ID, not define yet
+char dateTime[64];          // string to store the start date and time
+bool loadProfile = true;    // the option of load profile, true=default, false=predefine
+
 /*-------------------var for display-------------------*/
 
-float current_mA;     // the current at a specific time, unit=mA
-float avgCurrent_mA;  // the average current in pass second, unit=mA
+float current_mA;       // the current at a specific time, unit=mA
+float avgCurrent_mA;    // the average current in pass second, unit=mA
 bool testState = false; // true after user finish input and start, until homing finish
-char dateTime[64];    // string to store the start date and time
+uint64_t motorRunTime;  // the total time that the motor run, not including the pause time
 
 /*------------------function protypes------------------*/
 
@@ -299,9 +303,11 @@ void loggingData(void * parameter) {
       newFileInit();  // create new file and header
       Serial.println("Logging initialized");
       
-      // after create file, do data logging
+      // after create file, wait for finish
+      // data logging will be done when in needed
       while (testState)  {
-        logData();
+        vTaskDelay(500);
+        // logData();
       }
 
       finishLogging = true;
