@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "ui.h": "c",
+        "ui_events.h": "c",
+        "lvgl.h": "c",
+        "lv_hal.h": "c",
+        "sdl.h": "c",
+        "app_hal.h": "c",
+        "keyboard.h": "c",
+        "ui_helpers.h": "c"
+    }
+}

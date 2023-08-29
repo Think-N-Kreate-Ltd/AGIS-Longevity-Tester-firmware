@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include <ezButton.h>
+#include <SPI.h>
+#include <Tester_Display.h>
+#include <ui.h>
 
 bool print = true;
 
@@ -46,9 +49,12 @@ void motorP1(uint8_t time=3);
 void motorP2(uint8_t time=7);
 void motorCycle(void * arg);
 void homingRollerClamp(void * arg);
+void tftDisplay(void * arg);
 
 void setup() {
   Serial.begin(115200);
+
+  pinMode(TFT_CS, OUTPUT);
 
   /*Create a task for running motor up and down continuously */
   xTaskCreate(motorCycle,
@@ -66,6 +72,13 @@ void setup() {
               13,             // task priority, 0-24, 24 highest priority
               NULL);          // task handle
 
+  // Create a task for TFT display
+  xTaskCreate(tftDisplay,       // function that should be called
+              "TFT display",    // name of the task (debug use)
+              4096,             // stack size
+              NULL,             // parameter to pass
+              3,                // task priority, 0-24, 24 highest priority
+              NULL);            // task handle
 }
 
 void loop() {
@@ -74,12 +87,6 @@ void loop() {
   //   print = false;
   // }
 }
-
-// bool limitSwitchTouched(ezButton limitSwitch) {
-//   limitSwitch.loop();
-//   if (limitSwitch.getState()) return false; // untouched
-//   else return true;                         // touched
-// }
 
 // pause the test
 // do not want to use sleep as it is harmful to the program
@@ -226,5 +233,15 @@ void homingRollerClamp(void * arg) {
     }
 
     vTaskDelay(50);
+  }
+}
+
+void tftDisplay(void * arg) {
+  display_init();
+  ui_init();
+
+  for(;;) {
+    lv_timer_handler(); // Should be call periodically
+    vTaskDelay(5);      // The timing is not critical but it should be about 5 milliseconds to keep the system responsive
   }
 }
