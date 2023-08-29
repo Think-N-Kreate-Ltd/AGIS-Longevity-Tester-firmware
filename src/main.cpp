@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include <ezButton.h>
 #include <WiFi.h>
+#include <SPI.h>
 #include <TESTER_INA219.h>
 #include <TESTER_LOGGING.h>
-#include <SPI.h>
 #include <Tester_Display.h>
 #include <ui.h>
 #include <Tester_common.h>
@@ -48,6 +48,7 @@ uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
 uint64_t sampleId = 12345678;  // the sample ID, not define yet
 char dateTime[64];          // string to store the start date and time
 bool loadProfile = true;    // the option of load profile, true=default, false=predefine
+bool downloadFile = false;  // when user click btn to down file, it will become true and start download
 
 /*-------------------var for display-------------------*/
 
@@ -87,7 +88,7 @@ void setup() {
               12,  // highest priority task
               NULL);
   
-  // *Create a task for different kinds of little things
+  // *Create a task for homing
   xTaskCreate(homingRollerClamp,      // function that should be called
               "Homing roller clamp",  // name of the task (debug use)
               4096,           // stack size
@@ -96,12 +97,12 @@ void setup() {
               NULL);          // task handle
 
   // I2C is too slow that cannot use interrupt
-  // xTaskCreate(getI2CData,     // function that should be called
-  //             "Get I2C Data", // name of the task (debug use)
-  //             4096,           // stack size
-  //             NULL,           // parameter to pass
-  //             1,              // task priority, 0-24, 24 highest priority
-  //             NULL);          // task handle
+  xTaskCreate(getI2CData,     // function that should be called
+              "Get I2C Data", // name of the task (debug use)
+              4096,           // stack size
+              NULL,           // parameter to pass
+              1,              // task priority, 0-24, 24 highest priority
+              NULL);          // task handle
 
   /*Create a task for data logging*/
   xTaskCreate(loggingData,       /* Task function. */
@@ -127,11 +128,11 @@ void setup() {
 }
 
 void loop() {
-  if (print) {
-    Serial.printf("record time: %d\n", TT);
-    Serial.println(dateTime);
-    print = false;
-  }
+  // if (print) {
+  //   Serial.printf("record time: %d\n", TT);
+  //   Serial.println(dateTime);
+  //   print = false;
+  // }
 }
 
 /*------------------function protypes------------------*/
@@ -146,6 +147,8 @@ void stopTest() {
   // all finish after homing
   // TODO: think how to stop it, now cannot stop for current problem
   recordTime = millis();
+  testState = false;
+  downloadFile = true;  // TODO: remove it after we can use keypad input
   Serial.println(recordTime);
   vTaskDelay(UINT_MAX); 
 }
@@ -198,7 +201,6 @@ void motorP1(uint8_t time) {
   if (state) {
     motorOn(PWM_P1UP);
     recTime = millis();
-    TT = recTime;
     do {
       vTaskDelay(20);
       pauseAll(pauseState);
@@ -208,7 +210,6 @@ void motorP1(uint8_t time) {
   } else {
     motorOn(PWM_P1DOWN);
     recTime = millis();
-    TT = recTime;
     do {
       vTaskDelay(20);
       pauseAll(pauseState);
@@ -234,7 +235,6 @@ void motorP2(uint8_t time) {
   if (state) {
     motorOn(PWM_P2UP);
     recTime = millis();
-    TT = recTime;
     vTaskDelay(20);
       for (uint8_t i=0; i<50; ++i) { // total delay for 20*50=1000ms
         if (limitSwitch_Up.getStateRaw() == 1) {
@@ -249,7 +249,6 @@ void motorP2(uint8_t time) {
   } else {
     motorOn(PWM_P2DOWN);
     recTime = millis();
-    TT = recTime;
     do {
       vTaskDelay(20);
       pauseAll(pauseState);
@@ -272,6 +271,13 @@ void motorCycle(void * arg) {
     vTaskDelay(20);
   }
   Serial.println("homing completed");
+
+  // debug use
+  vTaskDelay(5000);
+  testState = true;
+  Serial.println("Start test");
+  vTaskDelay(2000);
+
   for (;;) {
     static uint64_t recTime = millis();
     motorP1(numTime_P1);
@@ -313,8 +319,11 @@ void getI2CData(void * arg) {
 }
 
 void loggingData(void * parameter) {
-  // set up, only run once
-  // rmOldData(); // move to `enableWifi` as this is not needed with no wifi connection
+  // set up
+  if (!LittleFS.begin(true)) {
+    Serial.println("LittleFS Mount Failed");
+    return;
+  }
   static bool finishLogging = false;
 
   for (;;) {
@@ -344,6 +353,29 @@ void loggingData(void * parameter) {
     }
 
     vTaskDelay(500);
+
+    // force download file
+    if (downloadFile) {
+      // connect to wifi
+      WiFi.begin("TP-Link_TNK", "wluxe1907");
+      while (WiFi.status() != WL_CONNECTED) {
+        vTaskDelay(1000);
+      }
+
+      downLogFile();
+      Serial.print("you can download the file now, IP Address: ");
+      Serial.println(WiFi.localIP().toString());
+
+      while (!testState) {  // the user should download before next test start
+        vTaskDelay(500);
+      }
+      //disconnect WiFi
+      Serial.println("WiFi disconnected");
+      WiFi.disconnect(true);
+      WiFi.mode(WIFI_OFF);
+
+      downloadFile = false;
+    }
   }
 }
 

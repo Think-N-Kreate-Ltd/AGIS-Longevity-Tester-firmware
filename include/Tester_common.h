@@ -18,6 +18,7 @@ extern uint8_t T_OUT_P2DOWN;
 extern uint64_t sampleId;
 extern char dateTime[64];
 extern bool loadProfile;
+extern bool downloadFile;
 
 extern uint64_t motorRunTime;
 

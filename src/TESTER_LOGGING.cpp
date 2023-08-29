@@ -117,9 +117,11 @@ void appendFile(fs::FS &fs, const char * path, const char * message){
 // create new file and write the info+title
 void newFileInit() {
   char firstLine[64];
-  sprintf(filename, "/data/%08d.csv", sampleId);
-  sprintf(firstLine, "sample id:, %d, start time:, %s, \nTime:, Cycle Time, Current:\n", sampleId, dateTime);
+  sprintf(filename, "/%08d.csv", sampleId);
+  Serial.println(filename);
+  // sprintf(firstLine, "sample id:, %d, start time:, %s, \nTime:, Cycle Time, Current:\n", sampleId, dateTime);
 
+  vTaskDelay(50);
   writeFile2(LittleFS, filename, firstLine);
 }
 
@@ -137,12 +139,31 @@ void logData(uint64_t cycleTtime) {
   appendFile(LittleFS, filename, data);
 }
 
+// log the last line, which tells the time and finish
 void endLogging() {
   char data[64];
   sprintf(data, "%02d %02d:%02d:%02d, test and homing finish\n", motorRunTime/86400, 
           motorRunTime%86400/3600, motorRunTime%3600/60, motorRunTime%60);
   appendFile(LittleFS, filename, data);
   Serial.println("data logging finished");
+}
+
+void notFound(AsyncWebServerRequest *request) {
+  request->send(404, "text/plain", "Not found");
+}
+
+// to download log file in webpage
+void downLogFile() {
+  // create AsyncWebServer object on port 80
+  AsyncWebServer server(80);
+  AsyncWebSocket ws("/ws");
+
+  server.on("/log", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(LittleFS, filename, "text/plain", true);  // force download the file
+  });
+
+  server.onNotFound(notFound); // if 404 not found, go to 404 not found
+  server.begin();
 }
 
 // to delete all files in a dir (not include dir)

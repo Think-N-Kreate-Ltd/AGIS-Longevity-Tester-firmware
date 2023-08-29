@@ -3,6 +3,7 @@
 
 #include <LittleFS.h>
 #include "FS.h"
+#include <ESPAsyncWebServer.h>
 
 /*----------function that example provided (decrecated)----------*/
 
@@ -17,6 +18,7 @@ void appendFile(fs::FS &fs, const char * path, const char * message);
 void newFileInit();
 void logData(uint64_t cycleTtime);
 void endLogging();
+void downLogFile();
 
 /*------------function only use for fixing FS problem------------*/
 void deleteRfStar(fs::FS &fs, const char * dirname, uint8_t levels=3);
