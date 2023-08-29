@@ -125,8 +125,8 @@ void newFileInit() {
 // do whenever the limited SW is touched
 void logData(uint8_t time) {
   char data[64];  // the data that should log to file
-  sprintf(data, "%02d %02d:%02d:%02d, N/A, %f", motorRunTime/86400, motorRunTime%86400/3600, 
-          motorRunTime%3600/60, motorRunTime%60, );
+  sprintf(data, "%02d %02d:%02d:%02d, N/A", motorRunTime/86400, motorRunTime%86400/3600, 
+          motorRunTime%3600/60, motorRunTime%60);
   appendFile(LittleFS, filename, "");
   // TODO: change state when need to finish
 }
