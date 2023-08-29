@@ -3,6 +3,9 @@
 #include <WiFi.h>
 #include <TESTER_INA219.h>
 #include <TESTER_LOGGING.h>
+#include <SPI.h>
+#include <Tester_Display.h>
+#include <ui.h>
 
 bool print = true;
 long TT;
@@ -68,9 +71,12 @@ void homingRollerClamp(void * arg);
 void getI2CData(void * arg);
 void loggingData(void * parameter);
 void enableWifi(void * arg);
+void tftDisplay(void * arg);
 
 void setup() {
   Serial.begin(115200);
+
+  pinMode(TFT_CS, OUTPUT);
 
   /*Create a task for running motor up and down continuously */
   xTaskCreate(motorCycle,
@@ -110,6 +116,13 @@ void setup() {
               NULL,           // parameter to pass
               20,             // task priority, 0-24, 24 highest priority
               NULL);          // task handle
+  // Create a task for TFT display
+  xTaskCreate(tftDisplay,       // function that should be called
+              "TFT display",    // name of the task (debug use)
+              4096,             // stack size
+              NULL,             // parameter to pass
+              3,                // task priority, 0-24, 24 highest priority
+              NULL);            // task handle
 }
 
 void loop() {
@@ -354,4 +367,14 @@ void enableWifi(void * arg) {
   WiFi.mode(WIFI_OFF);
 
   vTaskDelete(NULL);  // delete itself
+}
+
+void tftDisplay(void * arg) {
+  display_init();
+  ui_init();
+
+  for(;;) {
+    lv_timer_handler(); // Should be call periodically
+    vTaskDelay(5);      // The timing is not critical but it should be about 5 milliseconds to keep the system responsive
+  }
 }
