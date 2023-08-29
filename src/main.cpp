@@ -194,6 +194,7 @@ void motorOn(int PWM) {
 void motorP1(uint8_t time) {
   static bool state = true; // motor move up first
   static uint32_t recTime;
+  logData(0);
   if (state) {
     motorOn(PWM_P1UP);
     recTime = millis();
@@ -229,6 +230,7 @@ void motorP1(uint8_t time) {
 void motorP2(uint8_t time) {
   static bool state = true; // motor move up first
   static uint32_t recTime;
+  logData(0);
   if (state) {
     motorOn(PWM_P2UP);
     recTime = millis();
@@ -271,8 +273,11 @@ void motorCycle(void * arg) {
   }
   Serial.println("homing completed");
   for (;;) {
+    static uint64_t recTime = millis();
     motorP1(numTime_P1);
     motorP2(numTime_P2);
+    logData(millis()-recTime);
+    recTime = millis();
   }
 }
 

@@ -124,17 +124,25 @@ void newFileInit() {
 }
 
 // do whenever the limited SW is touched
-void logData(uint8_t time) {
+// cycleTime = time for one cycle, can enter 0 when do not need to log
+void logData(uint64_t cycleTtime) {
   char data[64];  // the data that should log to file
-  sprintf(data, "%02d %02d:%02d:%02d, N/A", motorRunTime/86400, motorRunTime%86400/3600, 
-          motorRunTime%3600/60, motorRunTime%60);
-  appendFile(LittleFS, filename, "");
-  // TODO: change state when need to finish
+  if (cycleTtime == 0) {
+    sprintf(data, "%02d %02d:%02d:%02d, N/A, %f\n", motorRunTime/86400, motorRunTime%86400/3600, 
+            motorRunTime%3600/60, motorRunTime%60, avgCurrent_mA);
+  } else {
+    sprintf(data, "%02d %02d:%02d:%02d, %d, %f\n", motorRunTime/86400, motorRunTime%86400/3600, 
+            motorRunTime%3600/60, motorRunTime%60, cycleTtime, avgCurrent_mA);
+  }
+  appendFile(LittleFS, filename, data);
 }
 
 void endLogging() {
-  // TODO: append the last data
-  // TODO: close file(?)
+  char data[64];
+  sprintf(data, "%02d %02d:%02d:%02d, test and homing finish\n", motorRunTime/86400, 
+          motorRunTime%86400/3600, motorRunTime%3600/60, motorRunTime%60);
+  appendFile(LittleFS, filename, data);
+  Serial.println("data logging finished");
 }
 
 // to delete all files in a dir (not include dir)

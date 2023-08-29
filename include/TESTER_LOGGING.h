@@ -15,7 +15,7 @@ void appendFile(fs::FS &fs, const char * path, const char * message);
 /*-------------------function that self added-------------------*/
 
 void newFileInit();
-void logData(uint8_t time);
+void logData(uint64_t cycleTtime);
 void endLogging();
 
 /*------------function only use for fixing FS problem------------*/
