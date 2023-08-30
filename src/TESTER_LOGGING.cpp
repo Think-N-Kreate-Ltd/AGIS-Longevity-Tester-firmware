@@ -1,6 +1,9 @@
 #include <TESTER_LOGGING.h>
 #include <Tester_common.h>
 
+// create AsyncWebServer object on port 80
+AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
 char filename[16];
 
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
@@ -116,35 +119,36 @@ void appendFile(fs::FS &fs, const char * path, const char * message){
 
 // create new file and write the info+title
 void newFileInit() {
-  char firstLine[64];
+  char firstLine[64]; // it is seperate into 3 times to write
   sprintf(filename, "/%08d.csv", sampleId);
-  Serial.println(filename);
-  // sprintf(firstLine, "sample id:, %d, start time:, %s, \nTime:, Cycle Time, Current:\n", sampleId, dateTime);
+  sprintf(firstLine, "sample id:, %d, start time:, ", sampleId);
 
   vTaskDelay(50);
   writeFile2(LittleFS, filename, firstLine);
+  appendFile(LittleFS, filename, dateTime);
+  appendFile(LittleFS, filename, "\nTime:, Cycle Time, Current:\n");
 }
 
 // do whenever the limited SW is touched
 // cycleTime = time for one cycle, can enter 0 when do not need to log
-void logData(uint64_t cycleTtime) {
-  char data[64];  // the data that should log to file
+void logData(uint8_t cycleTtime) {
+  char data[80];  // the data that should log to file
+  // cal first to reduce the length
+  uint16_t hour = motorRunTime/3600;
+  uint8_t min = motorRunTime%3600/60;
+  uint8_t sec = motorRunTime%60;
   if (cycleTtime == 0) {
-    sprintf(data, "%02d %02d:%02d:%02d, N/A, %f\n", motorRunTime/86400, motorRunTime%86400/3600, 
-            motorRunTime%3600/60, motorRunTime%60, avgCurrent_mA);
+    sprintf(data, "%03d:%02d:%02d, N/A, %5.2f\n", hour, min, sec, avgCurrent_mA);
   } else {
-    sprintf(data, "%02d %02d:%02d:%02d, %d, %f\n", motorRunTime/86400, motorRunTime%86400/3600, 
-            motorRunTime%3600/60, motorRunTime%60, cycleTtime, avgCurrent_mA);
+    sprintf(data, "%03d:%02d:%02d, %02d, %5.2f\n", hour, min, sec, cycleTtime, avgCurrent_mA);
   }
+
   appendFile(LittleFS, filename, data);
 }
 
 // log the last line, which tells the time and finish
 void endLogging() {
-  char data[64];
-  sprintf(data, "%02d %02d:%02d:%02d, test and homing finish\n", motorRunTime/86400, 
-          motorRunTime%86400/3600, motorRunTime%3600/60, motorRunTime%60);
-  appendFile(LittleFS, filename, data);
+  appendFile(LittleFS, filename, "test and homing finish\n");
   Serial.println("data logging finished");
 }
 
@@ -154,11 +158,7 @@ void notFound(AsyncWebServerRequest *request) {
 
 // to download log file in webpage
 void downLogFile() {
-  // create AsyncWebServer object on port 80
-  AsyncWebServer server(80);
-  AsyncWebSocket ws("/ws");
-
-  server.on("/log", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(LittleFS, filename, "text/plain", true);  // force download the file
   });
 

@@ -60,7 +60,7 @@ uint64_t motorRunTime;  // the total time that the motor run, not including the 
 /*------------------function protypes------------------*/
 
 void stopTest();
-void pauseAll(bool state);
+void pauseAll();
 void timeoutCheck(uint8_t timeout, uint32_t time);
 void motorOn(int PWM);
 void motorP1(uint8_t time=3);
@@ -75,10 +75,27 @@ void loggingData(void * parameter);
 void enableWifi(void * arg);
 void tftDisplay(void * arg);
 
+/*------------------------Timers------------------------*/
+
+// create pointer for timer
+hw_timer_t *Timer0_cfg = NULL; // create a pointer for timer0
+
+void IRAM_ATTR timeCount() {
+  if (!pauseState && testState) {
+    motorRunTime = (millis() - startTime)/1000;
+  }
+}
+
 void setup() {
   Serial.begin(115200);
-
   pinMode(TFT_CS, OUTPUT);
+
+  // setup for timer0
+  Timer0_cfg = timerBegin(0, 8000, true);   // prescaler = 8000
+  timerAttachInterrupt(Timer0_cfg, &timeCount,
+                       false);             // call the function motorcontrol()
+  timerAlarmWrite(Timer0_cfg, 5000, true); // time = 8000*5000/80,000,000 = 500ms
+  timerAlarmEnable(Timer0_cfg);            // start the interrupt
 
   /*Create a task for running motor up and down continuously */
   xTaskCreate(motorCycle,
@@ -129,8 +146,8 @@ void setup() {
 
 void loop() {
   // if (print) {
-  //   Serial.printf("record time: %d\n", TT);
-  //   Serial.println(dateTime);
+  //   Serial.printf("average current: %f\n", avgCurrent_mA);
+  //   Serial.printf("motor run time: %d\n", motorRunTime);
   //   print = false;
   // }
 }
@@ -156,15 +173,15 @@ void stopTest() {
 // pause the test
 // do not want to use sleep as it is harmful to the program
 // can try to use delay() in main loop but not recommened
-void pauseAll(bool state) {
-  if (state) {
-    recordTime = millis();
-    while (state) {
+void pauseAll() {
+  if (pauseState) {
+    uint64_t recTime = millis();
+    while (pauseState) {
       vTaskDelay(200);
     }
 
     // when resume, record the time again
-    startTime += millis() - recordTime;
+    startTime += (millis() - recTime);
   }
 }
 
@@ -203,7 +220,7 @@ void motorP1(uint8_t time) {
     recTime = millis();
     do {
       vTaskDelay(20);
-      pauseAll(pauseState);
+      pauseAll();
       timeoutCheck(T_OUT_P1UP, recTime);
     } while (limitSwitch_Up.getStateRaw() == 1);
     state = false;  // motor move down
@@ -212,7 +229,7 @@ void motorP1(uint8_t time) {
     recTime = millis();
     do {
       vTaskDelay(20);
-      pauseAll(pauseState);
+      pauseAll();
       timeoutCheck(T_OUT_P1DOWN, recTime);
     } while (limitSwitch_Down.getStateRaw() == 1);
     state = true;
@@ -239,7 +256,7 @@ void motorP2(uint8_t time) {
       for (uint8_t i=0; i<50; ++i) { // total delay for 20*50=1000ms
         if (limitSwitch_Up.getStateRaw() == 1) {
           vTaskDelay(20);
-          pauseAll(pauseState);
+          pauseAll();
           timeoutCheck(T_OUT_P2UP, recTime);
         } else {
           i=50; // if touch limit SW, directory go to next state
@@ -251,7 +268,7 @@ void motorP2(uint8_t time) {
     recTime = millis();
     do {
       vTaskDelay(20);
-      pauseAll(pauseState);
+      pauseAll();
       timeoutCheck(T_OUT_P2DOWN, recTime);
     } while (limitSwitch_Down.getStateRaw() == 1);
     state = true;
@@ -282,7 +299,7 @@ void motorCycle(void * arg) {
     static uint64_t recTime = millis();
     motorP1(numTime_P1);
     motorP2(numTime_P2);
-    logData(millis()-recTime);
+    logData((millis()-recTime)/1000);
     recTime = millis();
   }
 }
