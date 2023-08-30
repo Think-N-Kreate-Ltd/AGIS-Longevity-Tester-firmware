@@ -5,7 +5,6 @@
 #include <TESTER_INA219.h>
 #include <TESTER_LOGGING.h>
 #include <Tester_Display.h>
-#include <ui.h>
 #include <Tester_common.h>
 
 bool print = true;
@@ -114,12 +113,12 @@ void setup() {
               NULL);          // task handle
 
   // I2C is too slow that cannot use interrupt
-  xTaskCreate(getI2CData,     // function that should be called
-              "Get I2C Data", // name of the task (debug use)
-              4096,           // stack size
-              NULL,           // parameter to pass
-              1,              // task priority, 0-24, 24 highest priority
-              NULL);          // task handle
+  // xTaskCreate(getI2CData,     // function that should be called
+  //             "Get I2C Data", // name of the task (debug use)
+  //             4096,           // stack size
+  //             NULL,           // parameter to pass
+  //             1,              // task priority, 0-24, 24 highest priority
+  //             NULL);          // task handle
 
   /*Create a task for data logging*/
   xTaskCreate(loggingData,       /* Task function. */
@@ -426,7 +425,7 @@ void enableWifi(void * arg) {
 
 void tftDisplay(void * arg) {
   display_init();
-  ui_init();
+  // input_screen();
 
   for(;;) {
     lv_timer_handler(); // Should be call periodically
