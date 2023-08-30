@@ -85,12 +85,13 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
     else if (key == 'G') {
     }
     else {
-      data->key = key;  /*should not enter here*/
+      data->key = key;  /*must enter here, for input numbers*/
     }
 
     data->state = LV_INDEV_STATE_PRESSED;
   }
   else if (keypad.getState() == 0) {  // when keypad pressing is released
     data->state = LV_INDEV_STATE_RELEASED;
+    data->key = 0x00; /*reset key value and do nothing*/
   }
 }
