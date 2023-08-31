@@ -28,6 +28,7 @@ void set_patarea(lv_obj_t * obj, uint8_t index);
 
 static void pat1_event_cb(lv_event_t * event);
 static void pat2_event_cb(lv_event_t * event);
+static void id_input_event_cb(lv_event_t * event);
 void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data);
 void infusion_monitoring_cb(lv_timer_t * timer);
 

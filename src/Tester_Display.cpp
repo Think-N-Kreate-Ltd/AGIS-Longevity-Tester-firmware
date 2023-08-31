@@ -9,7 +9,8 @@ TFT_eSPI tft = TFT_eSPI();
 lv_group_t * grp;           /*a group to group all keypad evented object*/
 lv_obj_t * screenMain;      /*a screen object which will hold all other objects for input*/
 lv_obj_t * screenMonitor;   /*a screen object which will hold all other objects for data display*/
-lv_obj_t * dateTime_obj;        /*a object which hold the text of date time and display on main screen*/
+lv_obj_t * id_input;        /*a object which hold the sample input area*/
+lv_obj_t * dateTime_obj;    /*a object which hold the text of date time and display on main screen*/
 lv_indev_t * keypad_indev;  /*a driver in LVGL and save the created input device object*/
 static lv_style_t style;    /*set the layout style*/
 
@@ -87,19 +88,30 @@ void set_infoarea(lv_obj_t * parent) {
   lv_obj_t * widget = lv_obj_create(parent);
   lv_obj_set_style_border_color(widget, lv_color_hex(0x5b5b5b), LV_PART_MAIN);
   lv_obj_set_style_radius(widget, 0x00, LV_PART_MAIN);
-  lv_obj_set_size(widget, lv_pct(60), lv_pct(23));
+  lv_obj_set_size(widget, lv_pct(60), lv_pct(24));
   lv_obj_align(widget, LV_ALIGN_TOP_LEFT, 3, 3);
   lv_obj_set_scrollbar_mode(widget, LV_SCROLLBAR_MODE_OFF);
 
   /*create objects in container*/
   lv_obj_t * id_label = lv_label_create(widget);
   lv_label_set_text(id_label, "Sample ID:");
-  lv_obj_t * id2_label = lv_label_create(widget);
-  lv_label_set_text(id2_label, "Numerical input only:");
+  id_input = lv_textarea_create(widget);
+  lv_textarea_set_one_line(id_input, true);
+  lv_textarea_set_max_length(id_input, 8);
+  lv_obj_set_width(id_input, 80);
+  char default_data[12];
+  sprintf(default_data, "%d", sampleId);
+  lv_textarea_set_placeholder_text(id_input, default_data);
+  lv_obj_add_event_cb(id_input, id_input_event_cb, LV_EVENT_ALL, id_input);
+  lv_obj_set_style_pad_all(id_input, 0, 0);
+  lv_group_add_obj(grp, id_input);
+  // lv_label_set_text(id_input, "Numerical input only:");
+
   lv_obj_t * date_label = lv_label_create(widget);
   lv_label_set_text(date_label, "Date & Time:");
   dateTime_obj = lv_label_create(widget);
   lv_label_set_text(dateTime_obj, "Have no WiFi yet");
+
   lv_obj_t * load_label = lv_label_create(widget);
   lv_label_set_text(load_label, "Load Profile:");
   lv_obj_t * load2_label = lv_label_create(widget);
@@ -267,6 +279,21 @@ static void pat2_event_cb(lv_event_t * event) {
     }
     /*change the input color*/
     lv_obj_set_style_text_color(lv_obj_get_child(lv_obj_get_child(screenMain, 2), i), lv_palette_main(LV_PALETTE_GREEN), 0);
+  }
+}
+
+static void id_input_event_cb(lv_event_t * event) {  
+  lv_event_code_t code = lv_event_get_code(event);
+  lv_obj_t * ta = lv_event_get_target(event);
+
+  if (code == LV_EVENT_CLICKED || code == LV_EVENT_FOCUSED) {
+    /*when text area is clicked*/
+    /*do nothing*/
+  } else if (code == LV_EVENT_READY) {
+    /*get the input and store it*/
+    sampleId = atoi(lv_textarea_get_text(ta));
+    /*change the input color*/
+    lv_obj_set_style_text_color(id_input, lv_palette_main(LV_PALETTE_GREEN), 0);
   }
 }
 
