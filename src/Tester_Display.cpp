@@ -69,6 +69,7 @@ void input_screen() {
   lv_style_set_pad_all(&style, 2);
 
   set_infoarea(screenMain);
+  set_insarea(screenMain);
 
   /*Loads the main screen*/
   lv_disp_load_scr(screenMain);
@@ -101,7 +102,23 @@ void set_infoarea(lv_obj_t * parent) {
 }
 
 void set_insarea(lv_obj_t * parent) {
-  /*nothing now*/
+  /*create the object for the first container*/
+  lv_obj_t * widget = lv_obj_create(parent);
+  lv_obj_set_style_border_color(widget, lv_color_hex(0x000000), LV_PART_MAIN);
+  lv_obj_set_style_radius(widget, 0x00, LV_PART_MAIN);
+  lv_obj_set_size(widget, lv_pct(30), lv_pct(24));
+  lv_obj_align(widget, LV_ALIGN_TOP_RIGHT, -7, 7);
+  lv_obj_set_scrollbar_mode(widget, LV_SCROLLBAR_MODE_OFF);
+
+  /*create objects in container*/
+  lv_obj_t * ins_label = lv_label_create(widget);
+  lv_label_set_text(ins_label, "INSTRUCTIONS");
+  lv_obj_t * key1_label = lv_label_create(widget);
+  lv_label_set_text(key1_label, "F1: Clear all");
+  lv_obj_t * key2_label = lv_label_create(widget);
+  lv_label_set_text(key2_label, "F2: Run");
+
+  lv_obj_add_style(widget, &style, 0);
 }
 
 void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
