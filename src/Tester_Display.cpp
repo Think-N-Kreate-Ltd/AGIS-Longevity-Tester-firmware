@@ -284,7 +284,7 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
       data->key = LV_KEY_ENTER;
     }
     else if (key == 'C') {
-      data->key = LV_KEY_ESC;
+      esp_restart();
     }
     else if (key == 'L') {
       data->key = LV_KEY_LEFT;
