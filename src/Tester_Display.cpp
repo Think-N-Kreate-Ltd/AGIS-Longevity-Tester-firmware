@@ -128,6 +128,7 @@ void set_insarea(lv_obj_t * parent) {
   lv_obj_add_style(widget, &style, 0);
 }
 
+// setting text in grid, with specific grid and no padding
 void set_grid_obj(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text) {
   lv_obj_t * obj = lv_obj_create(parent);
   lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
