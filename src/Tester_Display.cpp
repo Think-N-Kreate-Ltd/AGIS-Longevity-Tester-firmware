@@ -9,7 +9,7 @@ TFT_eSPI tft = TFT_eSPI();
 lv_group_t * grp;           /*a group to group all keypad evented object*/
 lv_obj_t * screenMain;      /*a screen object which will hold all other objects for input*/
 lv_obj_t * screenMonitor;   /*a screen object which will hold all other objects for data display*/
-lv_obj_t * dateTime_obj;        /*a object which hold the text of date time and display on main screen*/
+lv_obj_t * dateTime_obj;    /*a object which hold the text of date time and display on main screen*/
 lv_indev_t * keypad_indev;  /*a driver in LVGL and save the created input device object*/
 static lv_style_t style;    /*set the layout style*/
 
