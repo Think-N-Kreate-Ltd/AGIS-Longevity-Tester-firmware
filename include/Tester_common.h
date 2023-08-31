@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+extern long TT;
+
 extern int16_t PWM_P1UP;
 extern int16_t PWM_P2UP;
 extern int16_t PWM_P2DOWN;

@@ -138,6 +138,22 @@ void set_grid_obj(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t 
   lv_obj_set_style_pad_all(obj, 0, 0);
 }
 
+// setting input field in grid, with specific grid and no padding
+void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text, uint8_t index) {
+  lv_obj_t * obj = lv_textarea_create(parent);
+  lv_obj_set_size(obj, 30, LV_SIZE_CONTENT);
+  lv_obj_set_grid_cell(obj, LV_GRID_ALIGN_CENTER, col_pos, col_span, LV_GRID_ALIGN_CENTER, row_pos, row_span);
+  
+  lv_textarea_set_one_line(obj, true);
+  lv_textarea_set_max_length(obj, 3);
+  lv_textarea_set_placeholder_text(obj, text);
+
+  lv_obj_move_to_index(obj, index);
+  lv_obj_add_event_cb(obj, textarea_event_cb, LV_EVENT_ALL, obj);
+
+  lv_obj_set_style_pad_all(obj, 0, 0);
+}
+
 void set_patarea(lv_obj_t * obj, uint8_t index) {
   static lv_coord_t col_dsc[] = {lv_pct(13), lv_pct(15), lv_pct(13), lv_pct(15), lv_pct(21), lv_pct(21), LV_GRID_TEMPLATE_LAST};
   static lv_coord_t row_dsc[] = {lv_pct(11), lv_pct(12), lv_pct(12), LV_GRID_TEMPLATE_LAST};
@@ -145,6 +161,7 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
   lv_obj_set_grid_dsc_array(obj, col_dsc, row_dsc);
   lv_obj_set_size(obj, lv_pct(100), lv_pct(36));
 
+  /*set label*/
   set_grid_obj(obj, 1, 1, 0, 1, "Timeout\n(s)");
   set_grid_obj(obj, 2, 1, 0, 1, "PWM");
   set_grid_obj(obj, 3, 1, 0, 1, "Number\nof times");
@@ -155,6 +172,13 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
 
   set_grid_obj(obj, 0, 1, 2, 1, "T_up_\npattern");
   set_grid_obj(obj, 4, 2, 2, 1, "Upper LS touched");
+
+  /*set input field*/
+  set_grid_obj_input(obj, 1, 1, 1, 1, "10", T_OUT_UP_INDEX);
+  set_grid_obj_input(obj, 1, 1, 2, 1, "10", T_OUT_DOWN_INDEX);
+  set_grid_obj_input(obj, 2, 1, 1, 1, "100", PWM_UP_INDEX);
+  set_grid_obj_input(obj, 2, 1, 2, 1, "60", PWM_DOWN_INDEX);
+  set_grid_obj_input(obj, 3, 1, 1, 2, "2", NUM_TIME_INDEX);
 
   /*setting with different index*/
   if (index == 1) {
@@ -169,6 +193,20 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
   /*style*/
   lv_obj_set_style_pad_all(obj, 0, 0);
   lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+}
+
+static void textarea_event_cb(lv_event_t * event) {  
+  lv_event_code_t code = lv_event_get_code(event);
+  lv_obj_t * ta = lv_event_get_target(event);
+
+  if (code == LV_EVENT_CLICKED || code == LV_EVENT_FOCUSED) {
+    /*when text area is clicked*/
+    /*do nothing*/
+  } else if (code == LV_EVENT_READY) {
+    /*get the input and store it*/
+    uint16_t i = lv_obj_get_index(ta);
+    TT = atoi(lv_textarea_get_text(ta));
+  }
 }
 
 void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
