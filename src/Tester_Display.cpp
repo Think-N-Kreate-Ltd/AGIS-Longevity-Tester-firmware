@@ -131,31 +131,43 @@ void set_insarea(lv_obj_t * parent) {
 void set_grid_obj(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text) {
   lv_obj_t * obj = lv_obj_create(parent);
   lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-  lv_obj_set_grid_cell(obj, LV_GRID_ALIGN_START, col_pos, col_span, LV_GRID_ALIGN_START, row_pos, row_span);
+  lv_obj_set_grid_cell(obj, LV_GRID_ALIGN_CENTER, col_pos, col_span, LV_GRID_ALIGN_CENTER, row_pos, row_span);
   lv_obj_t * label = lv_label_create(obj);
   lv_label_set_text(label, text);
-  // lv_obj_set_style_pad_all(obj, 0, 0);
+  lv_obj_set_style_pad_all(obj, 0, 0);
 }
 
 void set_patarea(lv_obj_t * obj, uint8_t index) {
-  static lv_coord_t col_dsc[] = {lv_pct(16), lv_pct(16), lv_pct(16), lv_pct(16), lv_pct(35), LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t row_dsc[] = {lv_pct(12), lv_pct(12), lv_pct(12), LV_GRID_TEMPLATE_LAST};
+  static lv_coord_t col_dsc[] = {lv_pct(13), lv_pct(15), lv_pct(13), lv_pct(15), lv_pct(21), lv_pct(21), LV_GRID_TEMPLATE_LAST};
+  static lv_coord_t row_dsc[] = {lv_pct(11), lv_pct(12), lv_pct(12), LV_GRID_TEMPLATE_LAST};
 
   lv_obj_set_grid_dsc_array(obj, col_dsc, row_dsc);
   lv_obj_set_size(obj, lv_pct(100), lv_pct(36));
 
-  set_grid_obj(obj, 0, 1, 0, 1, "Action");
+  set_grid_obj(obj, 1, 1, 0, 1, "Timeout\n(s)");
+  set_grid_obj(obj, 2, 1, 0, 1, "PWM");
+  set_grid_obj(obj, 3, 1, 0, 1, "Number\nof times");
+  set_grid_obj(obj, 4, 2, 0, 1, "Stop condition");
+
+  set_grid_obj(obj, 0, 1, 1, 1, "T_up_\npattern");
+  set_grid_obj(obj, 4, 2, 1, 1, "Upper LS touched");
+
+  set_grid_obj(obj, 0, 1, 2, 1, "T_up_\npattern");
+  set_grid_obj(obj, 4, 2, 2, 1, "Upper LS touched");
 
   /*setting with different index*/
   if (index == 1) {
+    set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern1");
     lv_obj_align(obj, LV_ALIGN_BOTTOM_MID, 0, 0);
   } else if (index == 2) {
+    set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern2");
     lv_obj_align(obj, LV_ALIGN_TOP_MID, 0, lv_pct(28));
   }
   lv_obj_move_to_index(obj, index);
 
-  /*style (padding)*/
+  /*style*/
   lv_obj_set_style_pad_all(obj, 0, 0);
+  lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
 }
 
 void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
