@@ -97,20 +97,20 @@ void setup() {
   timerAlarmEnable(Timer0_cfg);            // start the interrupt
 
   /*Create a task for running motor up and down continuously */
-  xTaskCreate(motorCycle,
-              "Running the Motor Cycle",
-              4096,
-              NULL,
-              12,  // highest priority task
-              NULL);
+  // xTaskCreate(motorCycle,
+  //             "Running the Motor Cycle",
+  //             4096,
+  //             NULL,
+  //             12,  // highest priority task
+  //             NULL);
   
   // *Create a task for homing
-  xTaskCreate(homingRollerClamp,      // function that should be called
-              "Homing roller clamp",  // name of the task (debug use)
-              4096,           // stack size
-              NULL,           // parameter to pass
-              13,             // task priority, 0-24, 24 highest priority
-              NULL);          // task handle
+  // xTaskCreate(homingRollerClamp,      // function that should be called
+  //             "Homing roller clamp",  // name of the task (debug use)
+  //             4096,           // stack size
+  //             NULL,           // parameter to pass
+  //             13,             // task priority, 0-24, 24 highest priority
+  //             NULL);          // task handle
 
   // I2C is too slow that cannot use interrupt
   // xTaskCreate(getI2CData,     // function that should be called
@@ -121,12 +121,12 @@ void setup() {
   //             NULL);          // task handle
 
   /*Create a task for data logging*/
-  xTaskCreate(loggingData,       /* Task function. */
-              "Data Logging",    /* String with name of task. */
-              4096,              /* Stack size in bytes. */
-              NULL,              /* Parameter passed as input of the task */
-              4,                 /* Priority of the task. */
-              NULL);             /* Task handle. */
+  // xTaskCreate(loggingData,       /* Task function. */
+  //             "Data Logging",    /* String with name of task. */
+  //             4096,              /* Stack size in bytes. */
+  //             NULL,              /* Parameter passed as input of the task */
+  //             4,                 /* Priority of the task. */
+  //             NULL);             /* Task handle. */
   
   xTaskCreate(enableWifi,     // function that should be called
               "Enable WiFi",  // name of the task (debug use)
@@ -425,7 +425,7 @@ void enableWifi(void * arg) {
 
 void tftDisplay(void * arg) {
   display_init();
-  // input_screen();
+  input_screen();
 
   for(;;) {
     lv_timer_handler(); // Should be call periodically

@@ -7,11 +7,13 @@ static lv_color_t buf[TFT_WIDTH * TFT_HEIGHT / 10];
 TFT_eSPI tft = TFT_eSPI();
 
 lv_group_t * grp;           /*a group to group all keypad evented object*/
+lv_obj_t * screenMain;      /*a screen object which will hold all other objects for input*/
+lv_obj_t * screenMonitor;   /*a screen object which will hold all other objects for data display*/
 lv_indev_t * keypad_indev;  /*a driver in LVGL and save the created input device object*/
 
 void display_init() {
   tft.begin();
-  tft.setRotation(1);        // Landscape orientation
+  tft.setRotation(3);        // Landscape orientation
 
   lv_init();
   lv_disp_draw_buf_init(&disp_buf, buf, NULL, TFT_WIDTH * TFT_HEIGHT / 10);
@@ -36,6 +38,9 @@ void display_init() {
   grp = lv_group_create();
   lv_group_set_default(grp);  /*let the object create added to this group*/
   lv_indev_set_group(keypad_indev, grp);
+
+  // Call every 500ms // TODO:
+  // lv_timer_t * infusion_monitoring_timer = lv_timer_create(infusion_monitoring_cb, 500, NULL);
 }
 
 /*writes color information from the “color_p” pointer to the needed “area”*/
@@ -49,6 +54,54 @@ void my_disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *c
   tft.endWrite();
 
   lv_disp_flush_ready(disp_drv);
+}
+
+void input_screen() {
+  /*a screen object which will hold all other objects*/
+  screenMain = lv_obj_create(NULL);
+
+  set_infoarea(screenMain);
+
+  /*Loads the main screen*/
+  lv_disp_load_scr(screenMain);
+}
+
+void set_infoarea(lv_obj_t * parent) {
+  /*create the object for the first container*/
+  lv_obj_t * widget = lv_obj_create(screenMain);
+  lv_obj_set_style_border_color(widget, lv_color_hex(0x5b5b5b), LV_PART_MAIN);
+  lv_obj_set_style_radius(widget, 0x00, LV_PART_MAIN);
+  lv_obj_set_size(widget, lv_pct(60), lv_pct(23));
+  lv_obj_align(widget, LV_ALIGN_TOP_LEFT, 3, 3);
+  lv_obj_set_scrollbar_mode(widget, LV_SCROLLBAR_MODE_OFF);
+
+  /*set the layout style*/
+  static lv_style_t style;;
+  lv_style_set_layout(&style, LV_LAYOUT_FLEX);
+  lv_style_set_flex_flow(&style, LV_FLEX_FLOW_ROW_WRAP);
+  lv_style_set_flex_main_place(&style, LV_FLEX_ALIGN_SPACE_AROUND);
+  lv_style_set_flex_cross_place(&style, LV_FLEX_ALIGN_CENTER);
+  lv_style_set_pad_all(&style, 2);
+
+  /*create objects in container*/
+  lv_obj_t * id_label = lv_label_create(widget);
+  lv_label_set_text(id_label, "Sample ID:");
+  lv_obj_t * id2_label = lv_label_create(widget);
+  lv_label_set_text(id2_label, "Numerical input only:");
+  lv_obj_t * date_label = lv_label_create(widget);
+  lv_label_set_text(date_label, "Date & Time:");
+  lv_obj_t * date2_label = lv_label_create(widget);
+  lv_label_set_text(date2_label, "dateTime0123");
+  lv_obj_t * load_label = lv_label_create(widget);
+  lv_label_set_text(load_label, "Load Profile:");
+  lv_obj_t * load2_label = lv_label_create(widget);
+  lv_label_set_text(load2_label, "Default");
+
+  lv_obj_add_style(widget, &style, 0);
+}
+
+void set_insarea(lv_obj_t * parent) {
+  /*nothing now*/
 }
 
 void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
