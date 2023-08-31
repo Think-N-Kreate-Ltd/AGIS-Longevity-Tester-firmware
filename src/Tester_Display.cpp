@@ -9,6 +9,7 @@ TFT_eSPI tft = TFT_eSPI();
 lv_group_t * grp;           /*a group to group all keypad evented object*/
 lv_obj_t * screenMain;      /*a screen object which will hold all other objects for input*/
 lv_obj_t * screenMonitor;   /*a screen object which will hold all other objects for data display*/
+lv_obj_t * dateTime_obj;        /*a object which hold the text of date time and display on main screen*/
 lv_indev_t * keypad_indev;  /*a driver in LVGL and save the created input device object*/
 static lv_style_t style;    /*set the layout style*/
 
@@ -37,11 +38,10 @@ void display_init() {
   keypad_indev = lv_indev_drv_register(&indev_drv);
   /*set group*/
   grp = lv_group_create();
-  lv_group_set_default(grp);  /*let the object create added to this group*/
   lv_indev_set_group(keypad_indev, grp);
 
   // Call every 500ms // TODO:
-  // lv_timer_t * infusion_monitoring_timer = lv_timer_create(infusion_monitoring_cb, 500, NULL);
+  lv_timer_t * infusion_monitoring_timer = lv_timer_create(infusion_monitoring_cb, 500, NULL);
 }
 
 /*writes color information from the “color_p” pointer to the needed “area”*/
@@ -98,8 +98,8 @@ void set_infoarea(lv_obj_t * parent) {
   lv_label_set_text(id2_label, "Numerical input only:");
   lv_obj_t * date_label = lv_label_create(widget);
   lv_label_set_text(date_label, "Date & Time:");
-  lv_obj_t * date2_label = lv_label_create(widget);
-  lv_label_set_text(date2_label, "dateTime0123");
+  dateTime_obj = lv_label_create(widget);
+  lv_label_set_text(dateTime_obj, "Have no WiFi yet");
   lv_obj_t * load_label = lv_label_create(widget);
   lv_label_set_text(load_label, "Load Profile:");
   lv_obj_t * load2_label = lv_label_create(widget);
@@ -150,6 +150,7 @@ void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, ui
 
   lv_obj_move_to_index(obj, index);
   lv_obj_add_event_cb(obj, textarea_event_cb, LV_EVENT_ALL, obj);
+  lv_group_add_obj(grp, obj);
 
   lv_obj_set_style_pad_all(obj, 0, 0);
 }
@@ -209,6 +210,12 @@ static void textarea_event_cb(lv_event_t * event) {
   }
 }
 
+void infusion_monitoring_cb(lv_timer_t * timer) {
+  if (strchr(dateTime, ':')) {  // keep show last text when not connect to WiFi
+    lv_label_set_text(dateTime_obj, dateTime);
+  }
+}
+
 void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
   uint8_t key = keypad.getKey();
   if(key) {
@@ -221,17 +228,15 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
     }
     else if (key == 'L') {
       data->key = LV_KEY_LEFT;
-      // data->key = LV_KEY_PREV;
     }
     else if (key == 'R') {
       data->key = LV_KEY_RIGHT;
-      // data->key = LV_KEY_NEXT;
     }
     else if (key == 'U') {
-      data->key = LV_KEY_UP;
+      data->key = LV_KEY_PREV;
     }
     else if (key == 'D') {
-      data->key = LV_KEY_DOWN;
+      data->key = LV_KEY_NEXT;
     }
     else if (key == '#') {
       data->key = LV_KEY_BACKSPACE;
