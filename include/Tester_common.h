@@ -22,9 +22,10 @@ extern char dateTime[64];
 extern bool loadProfile;
 extern bool downloadFile;
 
-extern uint64_t motorRunTime;
-
 extern float current_mA;
 extern float avgCurrent_mA;
+extern bool testState = false;
+extern bool pauseState = false;
+extern uint64_t motorRunTime;
 
 #endif  // tester_common_h

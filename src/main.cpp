@@ -27,8 +27,6 @@ bool motorState = true;    // for checking the motor is moving Up or Down, ture=
 uint64_t recordTime;       // for record the time of motor 
 uint64_t startTime = millis();      // for record the starting time of the test 
 
-bool pauseState = false;    // will pause the test will it goes to true
-
 /*-----------------var for user inputs-----------------*/
 
 int16_t PWM_P1UP = 255;     // PWM of motor of pattern 1 move up, postitve=move up, negetive=move down
@@ -54,6 +52,7 @@ bool downloadFile = false;  // when user click btn to down file, it will become 
 float current_mA;       // the current at a specific time, unit=mA
 float avgCurrent_mA;    // the average current in pass second, unit=mA
 bool testState = false; // true after user finish input and start, until homing finish
+bool pauseState = false;// will pause the test will it goes to true
 uint64_t motorRunTime;  // the total time that the motor run, not including the pause time
 
 /*------------------function protypes------------------*/
