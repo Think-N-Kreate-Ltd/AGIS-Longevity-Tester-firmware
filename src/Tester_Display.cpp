@@ -139,7 +139,8 @@ void set_grid_obj(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t 
 }
 
 // setting input field in grid, with specific grid and no padding
-void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text, uint8_t index) {
+// pattern = pattern number
+void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text, uint8_t index, uint8_t pattern) {
   lv_obj_t * obj = lv_textarea_create(parent);
   lv_obj_set_size(obj, 30, LV_SIZE_CONTENT);
   lv_obj_set_grid_cell(obj, LV_GRID_ALIGN_CENTER, col_pos, col_span, LV_GRID_ALIGN_CENTER, row_pos, row_span);
@@ -149,7 +150,12 @@ void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, ui
   lv_textarea_set_placeholder_text(obj, text);
 
   lv_obj_move_to_index(obj, index);
-  lv_obj_add_event_cb(obj, textarea_event_cb, LV_EVENT_ALL, obj);
+  if (pattern == 1) {
+    lv_obj_add_event_cb(obj, pat1_event_cb, LV_EVENT_ALL, obj);
+  } else if (pattern == 2) {
+    lv_obj_add_event_cb(obj, pat2_event_cb, LV_EVENT_ALL, obj);
+  }
+  
   lv_group_add_obj(grp, obj);
 
   lv_obj_set_style_pad_all(obj, 0, 0);
@@ -174,20 +180,34 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
   set_grid_obj(obj, 0, 1, 2, 1, "T_up_\npattern");
   set_grid_obj(obj, 4, 2, 2, 1, "Upper LS touched");
 
-  /*set input field*/
-  set_grid_obj_input(obj, 1, 1, 1, 1, "10", T_OUT_UP_INDEX);
-  set_grid_obj_input(obj, 1, 1, 2, 1, "10", T_OUT_DOWN_INDEX);
-  set_grid_obj_input(obj, 2, 1, 1, 1, "100", PWM_UP_INDEX);
-  set_grid_obj_input(obj, 2, 1, 2, 1, "60", PWM_DOWN_INDEX);
-  set_grid_obj_input(obj, 3, 1, 1, 2, "2", NUM_TIME_INDEX);
-
   /*setting with different index*/
+  char default_data[4];
   if (index == 1) {
     set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern1");
-    lv_obj_align(obj, LV_ALIGN_BOTTOM_MID, 0, 0);
+    sprintf(default_data, "%d", T_OUT_P1UP);
+    set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
+    sprintf(default_data, "%d", T_OUT_P1DOWN);
+    set_grid_obj_input(obj, 1, 1, 2, 1, default_data, T_OUT_DOWN_INDEX, index);
+    sprintf(default_data, "%d", PWM_P1UP*100/255);
+    set_grid_obj_input(obj, 2, 1, 1, 1, default_data, PWM_UP_INDEX, index);
+    sprintf(default_data, "%d", abs(PWM_P1DOWN*100/255));
+    set_grid_obj_input(obj, 2, 1, 2, 1, default_data, PWM_DOWN_INDEX, index);
+    sprintf(default_data, "%d", (numTime_P1+1)/2);
+    set_grid_obj_input(obj, 3, 1, 1, 2, default_data, NUM_TIME_INDEX, index);
+    lv_obj_align(obj, LV_ALIGN_TOP_MID, 0, lv_pct(28));
   } else if (index == 2) {
     set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern2");
-    lv_obj_align(obj, LV_ALIGN_TOP_MID, 0, lv_pct(28));
+    sprintf(default_data, "%d", T_OUT_P2UP);
+    set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
+    sprintf(default_data, "%d", T_OUT_P2DOWN);
+    set_grid_obj_input(obj, 1, 1, 2, 1, default_data, T_OUT_DOWN_INDEX, index);
+    sprintf(default_data, "%d", PWM_P2UP*100/255);
+    set_grid_obj_input(obj, 2, 1, 1, 1, default_data, PWM_UP_INDEX, index);
+    sprintf(default_data, "%d", abs(PWM_P2DOWN*100/255));
+    set_grid_obj_input(obj, 2, 1, 2, 1, default_data, PWM_DOWN_INDEX, index);
+    sprintf(default_data, "%d", (numTime_P2+1)/2);
+    set_grid_obj_input(obj, 3, 1, 1, 2, default_data, NUM_TIME_INDEX, index);
+    lv_obj_align(obj, LV_ALIGN_BOTTOM_MID, 0, 0);
   }
   lv_obj_move_to_index(obj, index);
 
@@ -196,7 +216,7 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
   lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
 }
 
-static void textarea_event_cb(lv_event_t * event) {  
+static void pat1_event_cb(lv_event_t * event) {  
   lv_event_code_t code = lv_event_get_code(event);
   lv_obj_t * ta = lv_event_get_target(event);
 
@@ -206,7 +226,47 @@ static void textarea_event_cb(lv_event_t * event) {
   } else if (code == LV_EVENT_READY) {
     /*get the input and store it*/
     uint16_t i = lv_obj_get_index(ta);
-    TT = atoi(lv_textarea_get_text(ta));
+    if (i == T_OUT_UP_INDEX) {
+      T_OUT_P1UP = atoi(lv_textarea_get_text(ta));
+    } else if (i == T_OUT_DOWN_INDEX) {
+      T_OUT_P1DOWN = atoi(lv_textarea_get_text(ta));
+    } else if (i == PWM_UP_INDEX) {
+      PWM_P1UP = atoi(lv_textarea_get_text(ta)) * 255 / 100;
+    } else if (i == PWM_DOWN_INDEX) {
+      PWM_P1DOWN = atoi(lv_textarea_get_text(ta)) * 255 / 100;
+      PWM_P1DOWN *= -1;
+    } else if (i == NUM_TIME_INDEX) {
+      numTime_P1 = atoi(lv_textarea_get_text(ta)) * 2 - 1;
+    }
+    /*change the input color*/
+    lv_obj_set_style_text_color(lv_obj_get_child(lv_obj_get_child(screenMain, 1), i), lv_palette_main(LV_PALETTE_GREEN), 0);
+  }
+}
+
+static void pat2_event_cb(lv_event_t * event) {  
+  lv_event_code_t code = lv_event_get_code(event);
+  lv_obj_t * ta = lv_event_get_target(event);
+
+  if (code == LV_EVENT_CLICKED || code == LV_EVENT_FOCUSED) {
+    /*when text area is clicked*/
+    /*do nothing*/
+  } else if (code == LV_EVENT_READY) {
+    /*get the input and store it*/
+    uint16_t i = lv_obj_get_index(ta);
+    if (i == T_OUT_UP_INDEX) {
+      T_OUT_P2UP = atoi(lv_textarea_get_text(ta));
+    } else if (i == T_OUT_DOWN_INDEX) {
+      T_OUT_P2DOWN = atoi(lv_textarea_get_text(ta));
+    } else if (i == PWM_UP_INDEX) {
+      PWM_P2UP = atoi(lv_textarea_get_text(ta)) * 255 / 100;
+    } else if (i == PWM_DOWN_INDEX) {
+      PWM_P2DOWN = atoi(lv_textarea_get_text(ta)) * 255 / 100;
+      PWM_P2DOWN *= -1;
+    } else if (i == NUM_TIME_INDEX) {
+      numTime_P2 = atoi(lv_textarea_get_text(ta)) * 2 - 1;
+    }
+    /*change the input color*/
+    lv_obj_set_style_text_color(lv_obj_get_child(lv_obj_get_child(screenMain, 2), i), lv_palette_main(LV_PALETTE_GREEN), 0);
   }
 }
 

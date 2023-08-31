@@ -23,10 +23,11 @@ void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *colo
 void set_infoarea(lv_obj_t * parent);
 void set_insarea(lv_obj_t * parent);
 void set_grid_obj(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text);
-void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text, uint8_t index);
+void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text, uint8_t index, uint8_t pattern);
 void set_patarea(lv_obj_t * obj, uint8_t index);
 
-static void textarea_event_cb(lv_event_t * event);
+static void pat1_event_cb(lv_event_t * event);
+static void pat2_event_cb(lv_event_t * event);
 void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data);
 void infusion_monitoring_cb(lv_timer_t * timer);
 
