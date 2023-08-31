@@ -10,6 +10,7 @@ lv_group_t * grp;           /*a group to group all keypad evented object*/
 lv_obj_t * screenMain;      /*a screen object which will hold all other objects for input*/
 lv_obj_t * screenMonitor;   /*a screen object which will hold all other objects for data display*/
 lv_indev_t * keypad_indev;  /*a driver in LVGL and save the created input device object*/
+static lv_style_t style;    /*set the layout style*/
 
 void display_init() {
   tft.begin();
@@ -60,6 +61,13 @@ void input_screen() {
   /*a screen object which will hold all other objects*/
   screenMain = lv_obj_create(NULL);
 
+  /*set the layout style*/
+  lv_style_set_layout(&style, LV_LAYOUT_FLEX);
+  lv_style_set_flex_flow(&style, LV_FLEX_FLOW_ROW_WRAP);
+  lv_style_set_flex_main_place(&style, LV_FLEX_ALIGN_SPACE_AROUND);
+  lv_style_set_flex_cross_place(&style, LV_FLEX_ALIGN_CENTER);
+  lv_style_set_pad_all(&style, 2);
+
   set_infoarea(screenMain);
 
   /*Loads the main screen*/
@@ -68,20 +76,12 @@ void input_screen() {
 
 void set_infoarea(lv_obj_t * parent) {
   /*create the object for the first container*/
-  lv_obj_t * widget = lv_obj_create(screenMain);
+  lv_obj_t * widget = lv_obj_create(parent);
   lv_obj_set_style_border_color(widget, lv_color_hex(0x5b5b5b), LV_PART_MAIN);
   lv_obj_set_style_radius(widget, 0x00, LV_PART_MAIN);
   lv_obj_set_size(widget, lv_pct(60), lv_pct(23));
   lv_obj_align(widget, LV_ALIGN_TOP_LEFT, 3, 3);
   lv_obj_set_scrollbar_mode(widget, LV_SCROLLBAR_MODE_OFF);
-
-  /*set the layout style*/
-  static lv_style_t style;;
-  lv_style_set_layout(&style, LV_LAYOUT_FLEX);
-  lv_style_set_flex_flow(&style, LV_FLEX_FLOW_ROW_WRAP);
-  lv_style_set_flex_main_place(&style, LV_FLEX_ALIGN_SPACE_AROUND);
-  lv_style_set_flex_cross_place(&style, LV_FLEX_ALIGN_CENTER);
-  lv_style_set_pad_all(&style, 2);
 
   /*create objects in container*/
   lv_obj_t * id_label = lv_label_create(widget);
