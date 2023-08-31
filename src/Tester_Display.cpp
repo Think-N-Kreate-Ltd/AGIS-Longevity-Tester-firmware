@@ -66,10 +66,17 @@ void input_screen() {
   lv_style_set_flex_flow(&style, LV_FLEX_FLOW_ROW_WRAP);
   lv_style_set_flex_main_place(&style, LV_FLEX_ALIGN_SPACE_AROUND);
   lv_style_set_flex_cross_place(&style, LV_FLEX_ALIGN_CENTER);
-  lv_style_set_pad_all(&style, 2);
+  lv_style_set_pad_all(&style, 1);
 
+  /*set the info % ins widget(container)*/
   set_infoarea(screenMain);
   set_insarea(screenMain);
+
+  /*set the pattern container*/
+  lv_obj_t * pat1_cont = lv_obj_create(screenMain);
+  set_patarea(pat1_cont, 1);
+  lv_obj_t * pat2_cont = lv_obj_create(screenMain);
+  set_patarea(pat2_cont, 2);
 
   /*Loads the main screen*/
   lv_disp_load_scr(screenMain);
@@ -119,6 +126,36 @@ void set_insarea(lv_obj_t * parent) {
   lv_label_set_text(key2_label, "F2: Run");
 
   lv_obj_add_style(widget, &style, 0);
+}
+
+void set_grid_obj(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text) {
+  lv_obj_t * obj = lv_obj_create(parent);
+  lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+  lv_obj_set_grid_cell(obj, LV_GRID_ALIGN_START, col_pos, col_span, LV_GRID_ALIGN_START, row_pos, row_span);
+  lv_obj_t * label = lv_label_create(obj);
+  lv_label_set_text(label, text);
+  // lv_obj_set_style_pad_all(obj, 0, 0);
+}
+
+void set_patarea(lv_obj_t * obj, uint8_t index) {
+  static lv_coord_t col_dsc[] = {lv_pct(16), lv_pct(16), lv_pct(16), lv_pct(16), lv_pct(35), LV_GRID_TEMPLATE_LAST};
+  static lv_coord_t row_dsc[] = {lv_pct(12), lv_pct(12), lv_pct(12), LV_GRID_TEMPLATE_LAST};
+
+  lv_obj_set_grid_dsc_array(obj, col_dsc, row_dsc);
+  lv_obj_set_size(obj, lv_pct(100), lv_pct(36));
+
+  set_grid_obj(obj, 0, 1, 0, 1, "Action");
+
+  /*setting with different index*/
+  if (index == 1) {
+    lv_obj_align(obj, LV_ALIGN_BOTTOM_MID, 0, 0);
+  } else if (index == 2) {
+    lv_obj_align(obj, LV_ALIGN_TOP_MID, 0, lv_pct(28));
+  }
+  lv_obj_move_to_index(obj, index);
+
+  /*style (padding)*/
+  lv_obj_set_style_pad_all(obj, 0, 0);
 }
 
 void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
