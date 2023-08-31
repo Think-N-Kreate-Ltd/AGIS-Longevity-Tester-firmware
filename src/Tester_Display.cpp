@@ -15,7 +15,7 @@ static lv_style_t style;    /*set the layout style*/
 
 void display_init() {
   tft.begin();
-  tft.setRotation(3);        // Landscape orientation
+  tft.setRotation(1);        // Landscape orientation
 
   lv_init();
   lv_disp_draw_buf_init(&disp_buf, buf, NULL, TFT_WIDTH * TFT_HEIGHT / 10);
@@ -242,10 +242,13 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
       data->key = LV_KEY_BACKSPACE;
     }
     else if (key == '*') {
+      pauseState = !pauseState;
     }
     else if (key == 'F') {
+      // TODO: clear all
     }
     else if (key == 'G') {
+      testState = true;
     }
     else {
       data->key = key;  /*must enter here, for input numbers*/

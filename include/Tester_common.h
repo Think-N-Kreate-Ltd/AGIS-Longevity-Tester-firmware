@@ -24,8 +24,8 @@ extern bool downloadFile;
 
 extern float current_mA;
 extern float avgCurrent_mA;
-extern bool testState = false;
-extern bool pauseState = false;
+extern bool testState;
+extern bool pauseState;
 extern uint64_t motorRunTime;
 
 #endif  // tester_common_h

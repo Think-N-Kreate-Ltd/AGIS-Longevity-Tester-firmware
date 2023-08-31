@@ -96,36 +96,36 @@ void setup() {
   timerAlarmEnable(Timer0_cfg);            // start the interrupt
 
   /*Create a task for running motor up and down continuously */
-  // xTaskCreate(motorCycle,
-  //             "Running the Motor Cycle",
-  //             4096,
-  //             NULL,
-  //             12,  // highest priority task
-  //             NULL);
+  xTaskCreate(motorCycle,
+              "Running the Motor Cycle",
+              4096,
+              NULL,
+              12,  // highest priority task
+              NULL);
   
   // *Create a task for homing
-  // xTaskCreate(homingRollerClamp,      // function that should be called
-  //             "Homing roller clamp",  // name of the task (debug use)
-  //             4096,           // stack size
-  //             NULL,           // parameter to pass
-  //             13,             // task priority, 0-24, 24 highest priority
-  //             NULL);          // task handle
+  xTaskCreate(homingRollerClamp,      // function that should be called
+              "Homing roller clamp",  // name of the task (debug use)
+              4096,           // stack size
+              NULL,           // parameter to pass
+              13,             // task priority, 0-24, 24 highest priority
+              NULL);          // task handle
 
   // I2C is too slow that cannot use interrupt
-  // xTaskCreate(getI2CData,     // function that should be called
-  //             "Get I2C Data", // name of the task (debug use)
-  //             4096,           // stack size
-  //             NULL,           // parameter to pass
-  //             1,              // task priority, 0-24, 24 highest priority
-  //             NULL);          // task handle
+  xTaskCreate(getI2CData,     // function that should be called
+              "Get I2C Data", // name of the task (debug use)
+              4096,           // stack size
+              NULL,           // parameter to pass
+              1,              // task priority, 0-24, 24 highest priority
+              NULL);          // task handle
 
   /*Create a task for data logging*/
-  // xTaskCreate(loggingData,       /* Task function. */
-  //             "Data Logging",    /* String with name of task. */
-  //             4096,              /* Stack size in bytes. */
-  //             NULL,              /* Parameter passed as input of the task */
-  //             4,                 /* Priority of the task. */
-  //             NULL);             /* Task handle. */
+  xTaskCreate(loggingData,       /* Task function. */
+              "Data Logging",    /* String with name of task. */
+              4096,              /* Stack size in bytes. */
+              NULL,              /* Parameter passed as input of the task */
+              4,                 /* Priority of the task. */
+              NULL);             /* Task handle. */
   
   xTaskCreate(enableWifi,     // function that should be called
               "Enable WiFi",  // name of the task (debug use)
@@ -174,9 +174,14 @@ void stopTest() {
 void pauseAll() {
   if (pauseState) {
     uint64_t recTime = millis();
+    motorOn(0);
     while (pauseState) {
       vTaskDelay(200);
     }
+
+    // TODO: need to think how to restart
+
+    stopTest(); // TODO: call stop when press twice(?)
 
     // when resume, record the time again
     startTime += (millis() - recTime);
@@ -287,11 +292,12 @@ void motorCycle(void * arg) {
   }
   Serial.println("homing completed");
 
-  // debug use
-  vTaskDelay(5000);
-  testState = true;
+  while (!testState) {  // wait until user start the test (and homing completed)
+    vTaskDelay(500);
+  }
   Serial.println("Start test");
-  vTaskDelay(2000);
+  vTaskDelay(1000); // delay for 1 sec for logging init
+  startTime = millis();
 
   for (;;) {
     static uint64_t recTime = millis();
