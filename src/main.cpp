@@ -59,6 +59,7 @@ bool testState = false; // true after user finish input and start, until homing 
 bool pauseState = false;// will pause the test will it goes to true
 uint64_t motorRunTime;  // the total time that the motor run, not including the pause time
 uint64_t numCycle = 0;  // for recording the number of cycle
+failReason_t failReason = failReason_t::NOT_YET;
 
 /*------------------function protypes------------------*/
 
@@ -187,6 +188,9 @@ void pauseAll() {
 
     // TODO: need to think how to restart
 
+    if (failReason == failReason_t::NOT_YET) {
+      failReason = failReason_t::PRESS_KEY;
+    }
     stopTest(); // TODO: call stop when press twice(?)
 
     // when resume, record the time again
@@ -199,6 +203,9 @@ void pauseAll() {
 // time = the last record time
 void timeoutCheck(uint8_t timeout, uint32_t time) {
   if ((millis()-time) >= (timeout*1000)) {
+    if (failReason == failReason_t::NOT_YET) {
+      failReason = failReason_t::TIME_OUT;
+    }
     stopTest();
   }
 }
@@ -338,6 +345,9 @@ void getI2CData(void * arg) {
     // get current data every second
     getCurrent();
     if (avgCurrent_mA >= 150) {
+      if (failReason == failReason_t::NOT_YET) {
+        failReason = failReason_t::CURRENT_EXCEED;
+      }
       stopTest();
       Serial.println(avgCurrent_mA);
     }
