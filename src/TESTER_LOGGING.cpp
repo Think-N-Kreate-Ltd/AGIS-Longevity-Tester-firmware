@@ -161,6 +161,18 @@ void logData(uint64_t cycleTtime) {
 // log the last line, which tells the time and finish
 void endLogging() {
   appendFile(LittleFS, filename, "test and homing finish\n");
+  char data[50];
+  strcpy(data, "failure reason: ");
+  if (failReason == failReason_t::CURRENT_EXCEED) {
+    strcat(data, "Touch stall current");
+  }
+  if (failReason == failReason_t::TIME_OUT) {
+    strcat(data, "Time out");
+  }
+  if (failReason == failReason_t::PRESS_KEY) {
+    strcat(data, "Key `*` pressed");
+  }
+  appendFile(LittleFS, filename, data);
   Serial.println("data logging finished");
 }
 

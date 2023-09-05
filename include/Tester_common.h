@@ -33,4 +33,12 @@ extern bool pauseState;
 extern uint64_t motorRunTime;
 extern uint64_t numCycle;
 
+enum class failReason_t {
+  NOT_YET,
+  PRESS_KEY,
+  CURRENT_EXCEED,
+  TIME_OUT
+};
+extern failReason_t failReason;
+
 #endif  // tester_common_h
