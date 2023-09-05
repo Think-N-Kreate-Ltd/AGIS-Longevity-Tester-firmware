@@ -25,6 +25,9 @@ extern bool downloadFile;
 
 extern float current_mA;
 extern float avgCurrent_mA;
+
+extern bool motorState;
+extern uint8_t cycleState;
 extern bool testState;
 extern bool pauseState;
 extern uint64_t motorRunTime;

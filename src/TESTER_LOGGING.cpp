@@ -126,7 +126,7 @@ void newFileInit() {
   vTaskDelay(50);
   writeFile2(LittleFS, filename, firstLine);
   appendFile(LittleFS, filename, dateTime);
-  appendFile(LittleFS, filename, "\nTime:, Cycle Time, Current:\n");
+  appendFile(LittleFS, filename, "\nTime:, State, Cycle Time, Current:\n");
 }
 
 // do whenever the limited SW is touched
@@ -137,12 +137,18 @@ void logData(uint64_t cycleTtime) {
   uint16_t hour = motorRunTime/3600;
   uint8_t min = motorRunTime%3600/60;
   uint8_t sec = motorRunTime%60;
+  char MS[5];
+  if (motorState) {
+    strcpy(MS, "down");  // reversed as we log data after state changed
+  } else {
+    strcpy(MS, "up");    // reversed as we log data after state changed
+  }
   if (cycleTtime == 0) {
-    sprintf(data, "%03d:%02d:%02d, N/A, %5.2f\n", hour, min, sec, avgCurrent_mA);
+    sprintf(data, "%03d:%02d:%02d, C%d %s, N/A, %5.2f\n", hour, min, sec, cycleState, MS, avgCurrent_mA);
   } else {
     uint8_t CT1 = cycleTtime/1000;
     uint16_t CT2 = cycleTtime%1000;
-    sprintf(data, "%03d:%02d:%02d, %02d.%03d, %5.2f\n", hour, min, sec, CT1, CT2, avgCurrent_mA);
+    sprintf(data, "%03d:%02d:%02d, C%d %s, %02d.%03d, %5.2f\n", hour, min, sec, cycleState, MS, CT1, CT2, avgCurrent_mA);
   }
 
   appendFile(LittleFS, filename, data);

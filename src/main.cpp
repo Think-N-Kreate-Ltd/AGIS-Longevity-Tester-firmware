@@ -23,8 +23,7 @@ ezButton limitSwitch_Down(38); // create ezButton object that attach to pin 38
 /*----------------var for control motor----------------*/
 
 volatile bool motorHoming = true;   // will directly go to homing when true
-bool motorState = true;    // for checking the motor is moving Up or Down, ture=Up
-uint64_t recordTime;       // for record the time of motor 
+uint64_t recordTime;       // for record the time of motor, mainly for testing
 uint64_t startTime = millis();      // for record the starting time of the test 
 
 /*-----------------var for user inputs-----------------*/
@@ -47,10 +46,15 @@ char dateTime[64];          // string to store the start date and time
 bool loadProfile = true;    // the option of load profile, true=default, false=predefine
 bool downloadFile = false;  // when user click btn to down file, it will become true and start download
 
-/*-------------------var for display-------------------*/
+/*-------------------var for current-------------------*/
 
 float current_mA;       // the current at a specific time, unit=mA
 float avgCurrent_mA;    // the average current in pass second, unit=mA
+
+/*-------------------var for display-------------------*/
+
+bool motorState = true; // for checking the motor is moving Up or Down, ture=Up
+uint8_t cycleState = 0; // for checking the motor is moving which cycle, 0 for stop
 bool testState = false; // true after user finish input and start, until homing finish
 bool pauseState = false;// will pause the test will it goes to true
 uint64_t motorRunTime;  // the total time that the motor run, not including the pause time
@@ -163,6 +167,7 @@ void stopTest() {
   // TODO: think how to stop it, now cannot stop for current problem
   recordTime = millis();
   testState = false;
+  cycleState = 0;
   downloadFile = true;  // TODO: remove it after we can use keypad input
   Serial.println(recordTime);
   vTaskDelay(UINT_MAX); 
@@ -212,13 +217,10 @@ void motorOn(int PWM) {
 }
 
 // run the motor for pattern 1
-// state should be the motorState, can help to directly change (for checking in other place)
 // time is the number of time that motor On/Down should run, default is 3
 void motorP1(uint8_t time) {
-  static bool state = true; // motor move up first
   static uint32_t recTime;
-  logData(0);
-  if (state) {
+  if (motorState) {
     motorOn(PWM_P1UP);
     recTime = millis();
     do {
@@ -226,7 +228,7 @@ void motorP1(uint8_t time) {
       pauseAll();
       timeoutCheck(T_OUT_P1UP, recTime);
     } while (limitSwitch_Up.getStateRaw() == 1);
-    state = false;  // motor move down
+    motorState = false;  // motor move down
   } else {
     motorOn(PWM_P1DOWN);
     recTime = millis();
@@ -235,9 +237,10 @@ void motorP1(uint8_t time) {
       pauseAll();
       timeoutCheck(T_OUT_P1DOWN, recTime);
     } while (limitSwitch_Down.getStateRaw() == 1);
-    state = true;
+    motorState = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
   }
+  logData(0);
 
   if (time >= 1) { // run the next time
     Serial.printf("pattern 1 finish half, %d times remains\n", time);
@@ -246,13 +249,10 @@ void motorP1(uint8_t time) {
 }
 
 // run the motor for pattern 2
-// state should be the motorState, can help to directly change (for checking in other place)
 // time is the number of time that motor On/Down should run, default is 7
 void motorP2(uint8_t time) {
-  static bool state = true; // motor move up first
   static uint32_t recTime;
-  logData(0);
-  if (state) {
+  if (motorState) {
     motorOn(PWM_P2UP);
     recTime = millis();
     vTaskDelay(20);
@@ -265,7 +265,7 @@ void motorP2(uint8_t time) {
           i=50; // if touch limit SW, directory go to next state
         }
       }
-    state = false;  // motor move down
+    motorState = false;  // motor move down
   } else {
     motorOn(PWM_P2DOWN);
     recTime = millis();
@@ -274,9 +274,10 @@ void motorP2(uint8_t time) {
       pauseAll();
       timeoutCheck(T_OUT_P2DOWN, recTime);
     } while (limitSwitch_Down.getStateRaw() == 1);
-    state = true;
+    motorState = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
   }
+  logData(0);
 
   if (time >= 1) { // run the next time
     Serial.printf("pattern 2 finish half, %d times remains\n", time);
@@ -301,7 +302,9 @@ void motorCycle(void * arg) {
 
   for (;;) {
     static uint64_t recTime = millis();
+    cycleState = 1;
     motorP1(numTime_P1);
+    cycleState++;
     motorP2(numTime_P2);
     logData(millis()-recTime);
     recTime = millis();
