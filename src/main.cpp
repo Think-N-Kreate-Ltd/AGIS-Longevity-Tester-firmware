@@ -58,6 +58,7 @@ uint8_t cycleState = 0; // for checking the motor is moving which cycle, 0 for s
 bool testState = false; // true after user finish input and start, until homing finish
 bool pauseState = false;// will pause the test will it goes to true
 uint64_t motorRunTime;  // the total time that the motor run, not including the pause time
+uint64_t numCycle = 0;  // for recording the number of cycle
 
 /*------------------function protypes------------------*/
 
@@ -301,6 +302,7 @@ void motorCycle(void * arg) {
   startTime = millis();
 
   for (;;) {
+    numCycle++;
     static uint64_t recTime = millis();
     cycleState = 1;
     motorP1(numTime_P1);

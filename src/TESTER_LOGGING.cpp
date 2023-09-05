@@ -144,11 +144,15 @@ void logData(uint64_t cycleTtime) {
     strcpy(MS, "up");    // reversed as we log data after state changed
   }
   if (cycleTtime == 0) {
-    sprintf(data, "%03d:%02d:%02d, C%d %s, N/A, %5.2f\n", hour, min, sec, cycleState, MS, avgCurrent_mA);
+    sprintf(data, "%03d:%02d:%02d, P%d %s, N/A, %5.2f\n", hour, min, sec, cycleState, MS, avgCurrent_mA);
   } else {
     uint8_t CT1 = cycleTtime/1000;
     uint16_t CT2 = cycleTtime%1000;
-    sprintf(data, "%03d:%02d:%02d, C%d %s, %02d.%03d, %5.2f\n", hour, min, sec, cycleState, MS, CT1, CT2, avgCurrent_mA);
+    Serial.println(numCycle);
+    sprintf(data, "%03d:%02d:%02d, P%d %s, %02d.%03d", hour, min, sec, cycleState, MS, CT1, CT2);
+    char data2[127];  // too long, seperate it
+    sprintf(data2, "(%d), %5.2f\n", numCycle, avgCurrent_mA);
+    strcat(data, data2);
   }
 
   appendFile(LittleFS, filename, data);

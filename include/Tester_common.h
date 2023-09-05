@@ -31,5 +31,6 @@ extern uint8_t cycleState;
 extern bool testState;
 extern bool pauseState;
 extern uint64_t motorRunTime;
+extern uint64_t numCycle;
 
 #endif  // tester_common_h

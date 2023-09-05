@@ -329,10 +329,12 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
       data->key = LV_KEY_BACKSPACE;
     }
     else if (key == '*') {
-      pauseState = !pauseState;
+      if (testState) {
+        pauseState = !pauseState;
+      }
     }
     else if (key == 'F') {
-      // TODO: clear all
+      esp_restart();
     }
     else if (key == 'G') {
       testState = true;
