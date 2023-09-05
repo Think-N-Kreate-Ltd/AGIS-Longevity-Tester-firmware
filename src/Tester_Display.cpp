@@ -9,9 +9,6 @@ TFT_eSPI tft = TFT_eSPI();
 lv_group_t * grp;           /*a group to group all keypad evented object*/
 lv_obj_t * screenMain;      /*a screen object which will hold all other objects for input*/
 lv_obj_t * screenMonitor;   /*a screen object which will hold all other objects for data display*/
-lv_obj_t * id_input;        /*a object which hold the sample input area*/
-lv_obj_t * id_input_label;  /*a label object which hold the sample id in monitor screen*/
-lv_obj_t * dateTime_obj;    /*a object which hold the text of date time and display on main screen*/
 lv_indev_t * keypad_indev;  /*a driver in LVGL and save the created input device object*/
 static lv_style_t style;    /*set the layout style*/
 
@@ -70,7 +67,7 @@ void input_screen() {
   lv_style_set_flex_cross_place(&style, LV_FLEX_ALIGN_CENTER);
   lv_style_set_pad_all(&style, 1);
 
-  /*set the info % ins widget(container)*/
+  /*set the info & ins widget(container)*/
   set_infoarea(true);
   set_insarea(true);
 
@@ -88,9 +85,31 @@ void monitor_screen() {
   /*a screen object which will hold all other objects*/
   screenMonitor = lv_obj_create(NULL);
 
-  /*set the info % ins widget(container)*/
+  /*set the info & ins widget(container)*/
   set_infoarea(false);
   set_insarea(false);
+
+  /*set the table for showing status*/
+  lv_obj_t * table = lv_table_create(screenMonitor);
+  lv_obj_move_to_index(table, 1);
+
+  lv_obj_align(table, LV_ALIGN_BOTTOM_MID, 0, 0);
+  // lv_obj_set_style_border_color(table, lv_color_hex(0x5b5b5b), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(table, LV_OPA_TRANSP, LV_PART_MAIN);
+  lv_obj_set_style_line_color(table, lv_color_hex(0x5b5b5b), LV_PART_MAIN);
+  lv_table_set_col_width(table, 0, 140);
+  lv_obj_set_size(table, lv_pct(99), lv_pct(70));
+  lv_obj_set_style_text_font(table, &lv_font_montserrat_14, 0);
+
+  /*Fill the first column*/
+  lv_table_set_cell_value(table, 0, 0, "No. of cycles:");
+  lv_table_set_cell_value(table, 1, 0, "Status (current action)");
+  lv_table_set_cell_value(table, 2, 0, "Motor run time\n(HHH:MM:SS)");
+
+  /*Fill the second column*/
+  for (int i=0; i<3; ++i) {
+    lv_table_set_cell_value(table, i, 1, "Not started");
+  }
 }
 
 
@@ -114,7 +133,7 @@ void set_infoarea(bool screen) {
   lv_obj_t * id_label = lv_label_create(widget);
   lv_label_set_text(id_label, "Sample ID:");
   if (screen) {
-    id_input = lv_textarea_create(widget);
+    lv_obj_t * id_input = lv_textarea_create(widget);
     lv_textarea_set_one_line(id_input, true);
     lv_textarea_set_max_length(id_input, 8);
     lv_obj_set_width(id_input, 80);
@@ -124,15 +143,19 @@ void set_infoarea(bool screen) {
     lv_obj_add_event_cb(id_input, id_input_event_cb, LV_EVENT_ALL, id_input);
     lv_obj_set_style_pad_all(id_input, 0, 0);
     lv_group_add_obj(grp, id_input);
+    lv_obj_move_to_index(id_input, 1);  /*in fact, it is 1 originally*/
   } else {
-    id_input_label = lv_label_create(widget);
+    lv_obj_t * id_input_label = lv_label_create(widget);
     lv_label_set_text(id_input_label, "Now loading");
+    lv_obj_move_to_index(id_input_label, 1);
+    lv_obj_set_width(id_input_label, 80);
   }
 
   lv_obj_t * date_label = lv_label_create(widget);
   lv_label_set_text(date_label, "Date & Time:");
-  dateTime_obj = lv_label_create(widget);
+  lv_obj_t * dateTime_obj = lv_label_create(widget);
   lv_label_set_text(dateTime_obj, "Have no WiFi yet");
+  lv_obj_move_to_index(dateTime_obj, 3);  /*in fact, it is 3 originally*/
 
   lv_obj_t * load_label = lv_label_create(widget);
   lv_label_set_text(load_label, "Load Profile:");
@@ -140,6 +163,7 @@ void set_infoarea(bool screen) {
   lv_label_set_text(load2_label, "Default");
 
   lv_obj_add_style(widget, &style, 0);
+  lv_obj_move_to_index(widget, 0);
 }
 
 // screen=true for input screen
@@ -222,15 +246,15 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
   set_grid_obj(obj, 4, 2, 0, 1, "Stop condition");
 
   set_grid_obj(obj, 0, 1, 1, 1, "T_up_\npattern");
-  set_grid_obj(obj, 4, 2, 1, 1, "Upper LS touched");
 
-  set_grid_obj(obj, 0, 1, 2, 1, "T_up_\npattern");
-  set_grid_obj(obj, 4, 2, 2, 1, "Upper LS touched");
+  set_grid_obj(obj, 0, 1, 2, 1, "T_down_\npattern");
+  set_grid_obj(obj, 4, 2, 2, 1, "Lower LS touched");
 
   /*setting with different index*/
   char default_data[4];
   if (index == 1) {
     set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern1");
+    set_grid_obj(obj, 4, 2, 1, 1, "Upper LS touched");
     sprintf(default_data, "%d", T_OUT_P1UP);
     set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
     sprintf(default_data, "%d", T_OUT_P1DOWN);
@@ -244,6 +268,7 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
     lv_obj_align(obj, LV_ALIGN_TOP_MID, 0, lv_pct(28));
   } else if (index == 2) {
     set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern2");
+    set_grid_obj(obj, 4, 2, 1, 1, "Run 1s");
     sprintf(default_data, "%d", T_OUT_P2UP);
     set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
     sprintf(default_data, "%d", T_OUT_P2DOWN);
@@ -273,6 +298,7 @@ static void pat1_event_cb(lv_event_t * event) {
   } else if (code == LV_EVENT_READY) {
     /*get the input and store it*/
     uint16_t i = lv_obj_get_index(ta);
+    Serial.println(i);
     if (i == T_OUT_UP_INDEX) {
       T_OUT_P1UP = atoi(lv_textarea_get_text(ta));
     } else if (i == T_OUT_DOWN_INDEX) {
@@ -328,22 +354,33 @@ static void id_input_event_cb(lv_event_t * event) {
     /*get the input and store it*/
     sampleId = atoi(lv_textarea_get_text(ta));
     /*change the input color*/
-    lv_obj_set_style_text_color(id_input, lv_palette_main(LV_PALETTE_GREEN), 0);
+    lv_obj_set_style_text_color(lv_obj_get_child(lv_obj_get_child(screenMain, 0), 1), lv_palette_main(LV_PALETTE_GREEN), 0);
   }
 }
 
 void infusion_monitoring_cb(lv_timer_t * timer) {
   if (strchr(dateTime, ':')) {  // keep show last text when not connect to WiFi
-    lv_label_set_text(dateTime_obj, dateTime);
+    lv_label_set_text(lv_obj_get_child(lv_obj_get_child(screenMain, 0), 3), dateTime);
+    lv_label_set_text(lv_obj_get_child(lv_obj_get_child(screenMonitor, 0), 3), dateTime);
   }
+
   if (testState) {  // when start the test, update the monitor screen
     static bool doOnceOnly = true;  // if need to run test more than one time, this statement should move outside
     if (doOnceOnly) { // only do once for update info
-      lv_label_set_text_fmt(id_input_label, "%08d", sampleId);
+      lv_label_set_text_fmt(lv_obj_get_child(lv_obj_get_child(screenMonitor, 0), 1), "%08d", sampleId);
       doOnceOnly = false;
     }
 
-    /*TODO:*/
+    lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 0, 1, "%d", numCycle);
+    if (motorState) {
+      lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 1, 1, "Pattern %d > Motor Up", cycleState);
+    } else {
+      lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 1, 1, "Pattern %d > Motor Down", cycleState);
+    }
+    uint16_t hour = motorRunTime/3600;
+    uint8_t min = motorRunTime%3600/60;
+    uint8_t sec = motorRunTime%60;
+    lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 2, 1, "%03d:%02d:%02d", hour, min, sec);
   }
 }
 

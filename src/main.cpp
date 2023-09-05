@@ -150,7 +150,7 @@ void setup() {
 void loop() {
   // if (print) {
   //   Serial.printf("average current: %f\n", avgCurrent_mA);
-  //   Serial.printf("motor run time: %d\n", motorRunTime);
+  //   Serial.printf("start time: %s\n", dateTime);
   //   print = false;
   // }
 }

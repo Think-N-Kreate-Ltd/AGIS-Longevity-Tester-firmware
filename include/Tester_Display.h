@@ -9,9 +9,9 @@
 
 #define T_OUT_UP_INDEX    0
 #define T_OUT_DOWN_INDEX  1
-#define PWM_UP_INDEX      0
-#define PWM_DOWN_INDEX    1
-#define NUM_TIME_INDEX    2
+#define PWM_UP_INDEX      2
+#define PWM_DOWN_INDEX    3
+#define NUM_TIME_INDEX    4
 
 void display_init();
 void input_screen();
