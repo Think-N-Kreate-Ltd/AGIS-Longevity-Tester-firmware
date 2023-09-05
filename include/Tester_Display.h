@@ -20,8 +20,8 @@ void monitor_screen();
 /*----------function prototype only use in AGIS_Display.h (private)----------*/
 
 void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p );
-void set_infoarea(lv_obj_t * parent);
-void set_insarea(lv_obj_t * parent);
+void set_infoarea(bool screen);
+void set_insarea(bool screen);
 void set_grid_obj(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text);
 void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t row_pos, uint8_t row_span, const char * text, uint8_t index, uint8_t pattern);
 void set_patarea(lv_obj_t * obj, uint8_t index);

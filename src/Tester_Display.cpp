@@ -10,6 +10,7 @@ lv_group_t * grp;           /*a group to group all keypad evented object*/
 lv_obj_t * screenMain;      /*a screen object which will hold all other objects for input*/
 lv_obj_t * screenMonitor;   /*a screen object which will hold all other objects for data display*/
 lv_obj_t * id_input;        /*a object which hold the sample input area*/
+lv_obj_t * id_input_label;  /*a label object which hold the sample id in monitor screen*/
 lv_obj_t * dateTime_obj;    /*a object which hold the text of date time and display on main screen*/
 lv_indev_t * keypad_indev;  /*a driver in LVGL and save the created input device object*/
 static lv_style_t style;    /*set the layout style*/
@@ -41,7 +42,7 @@ void display_init() {
   grp = lv_group_create();
   lv_indev_set_group(keypad_indev, grp);
 
-  // Call every 500ms // TODO:
+  // Call every 500ms
   lv_timer_t * infusion_monitoring_timer = lv_timer_create(infusion_monitoring_cb, 500, NULL);
 }
 
@@ -70,8 +71,8 @@ void input_screen() {
   lv_style_set_pad_all(&style, 1);
 
   /*set the info % ins widget(container)*/
-  set_infoarea(screenMain);
-  set_insarea(screenMain);
+  set_infoarea(true);
+  set_insarea(true);
 
   /*set the pattern container*/
   lv_obj_t * pat1_cont = lv_obj_create(screenMain);
@@ -83,9 +84,26 @@ void input_screen() {
   lv_disp_load_scr(screenMain);
 }
 
-void set_infoarea(lv_obj_t * parent) {
+void monitor_screen() {
+  /*a screen object which will hold all other objects*/
+  screenMonitor = lv_obj_create(NULL);
+
+  /*set the info % ins widget(container)*/
+  set_infoarea(false);
+  set_insarea(false);
+}
+
+
+// screen=true for input screen
+// screen=false for monitor screen
+void set_infoarea(bool screen) {
   /*create the object for the first container*/
-  lv_obj_t * widget = lv_obj_create(parent);
+  lv_obj_t * widget;
+  if (screen) {
+    widget = lv_obj_create(screenMain);
+  } else {
+    widget = lv_obj_create(screenMonitor);
+  }
   lv_obj_set_style_border_color(widget, lv_color_hex(0x5b5b5b), LV_PART_MAIN);
   lv_obj_set_style_radius(widget, 0x00, LV_PART_MAIN);
   lv_obj_set_size(widget, lv_pct(60), lv_pct(24));
@@ -95,17 +113,21 @@ void set_infoarea(lv_obj_t * parent) {
   /*create objects in container*/
   lv_obj_t * id_label = lv_label_create(widget);
   lv_label_set_text(id_label, "Sample ID:");
-  id_input = lv_textarea_create(widget);
-  lv_textarea_set_one_line(id_input, true);
-  lv_textarea_set_max_length(id_input, 8);
-  lv_obj_set_width(id_input, 80);
-  char default_data[12];
-  sprintf(default_data, "%d", sampleId);
-  lv_textarea_set_placeholder_text(id_input, default_data);
-  lv_obj_add_event_cb(id_input, id_input_event_cb, LV_EVENT_ALL, id_input);
-  lv_obj_set_style_pad_all(id_input, 0, 0);
-  lv_group_add_obj(grp, id_input);
-  // lv_label_set_text(id_input, "Numerical input only:");
+  if (screen) {
+    id_input = lv_textarea_create(widget);
+    lv_textarea_set_one_line(id_input, true);
+    lv_textarea_set_max_length(id_input, 8);
+    lv_obj_set_width(id_input, 80);
+    char default_data[12];
+    sprintf(default_data, "%d", sampleId);
+    lv_textarea_set_placeholder_text(id_input, default_data);
+    lv_obj_add_event_cb(id_input, id_input_event_cb, LV_EVENT_ALL, id_input);
+    lv_obj_set_style_pad_all(id_input, 0, 0);
+    lv_group_add_obj(grp, id_input);
+  } else {
+    id_input_label = lv_label_create(widget);
+    lv_label_set_text(id_input_label, "Now loading");
+  }
 
   lv_obj_t * date_label = lv_label_create(widget);
   lv_label_set_text(date_label, "Date & Time:");
@@ -120,9 +142,16 @@ void set_infoarea(lv_obj_t * parent) {
   lv_obj_add_style(widget, &style, 0);
 }
 
-void set_insarea(lv_obj_t * parent) {
+// screen=true for input screen
+// screen=false for monitor screen
+void set_insarea(bool screen) {
   /*create the object for the first container*/
-  lv_obj_t * widget = lv_obj_create(parent);
+  lv_obj_t * widget;
+  if (screen) {
+    widget = lv_obj_create(screenMain);
+  } else {
+    widget = lv_obj_create(screenMonitor);
+  }
   lv_obj_set_style_border_color(widget, lv_color_hex(0x000000), LV_PART_MAIN);
   lv_obj_set_style_radius(widget, 0x00, LV_PART_MAIN);
   lv_obj_set_size(widget, lv_pct(30), lv_pct(24));
@@ -133,9 +162,15 @@ void set_insarea(lv_obj_t * parent) {
   lv_obj_t * ins_label = lv_label_create(widget);
   lv_label_set_text(ins_label, "INSTRUCTIONS");
   lv_obj_t * key1_label = lv_label_create(widget);
-  lv_label_set_text(key1_label, "F1: Clear all");
   lv_obj_t * key2_label = lv_label_create(widget);
-  lv_label_set_text(key2_label, "F2: Run");
+
+  if (screen) {
+    lv_label_set_text(key1_label, "ESC: Clear all");
+    lv_label_set_text(key2_label, "F2: Run");
+  } else {
+    lv_label_set_text(key1_label, "*:Pause/Resume");
+    lv_label_set_text(key2_label, "**:Stop");
+  }
 
   lv_obj_add_style(widget, &style, 0);
 }
@@ -301,6 +336,15 @@ void infusion_monitoring_cb(lv_timer_t * timer) {
   if (strchr(dateTime, ':')) {  // keep show last text when not connect to WiFi
     lv_label_set_text(dateTime_obj, dateTime);
   }
+  if (testState) {  // when start the test, update the monitor screen
+    static bool doOnceOnly = true;  // if need to run test more than one time, this statement should move outside
+    if (doOnceOnly) { // only do once for update info
+      lv_label_set_text_fmt(id_input_label, "%08d", sampleId);
+      doOnceOnly = false;
+    }
+
+    /*TODO:*/
+  }
 }
 
 void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
@@ -338,6 +382,7 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
     }
     else if (key == 'G') {
       testState = true;
+      lv_disp_load_scr(screenMonitor);
     }
     else {
       data->key = key;  /*must enter here, for input numbers*/

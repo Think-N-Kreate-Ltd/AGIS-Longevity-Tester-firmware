@@ -41,7 +41,7 @@ uint8_t T_OUT_P1DOWN = 10;  // timeout of motor of pattern 1 move down
 uint8_t T_OUT_P2UP = 2;     // timeout of motor of pattern 2 move up
 uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
 
-uint64_t sampleId = 12345678;  // the sample ID, not define yet
+uint64_t sampleId = 12345678;  // the sample ID, should be 8 numbers
 char dateTime[64];          // string to store the start date and time
 bool loadProfile = true;    // the option of load profile, true=default, false=predefine
 bool downloadFile = false;  // when user click btn to down file, it will become true and start download
@@ -436,6 +436,7 @@ void enableWifi(void * arg) {
 void tftDisplay(void * arg) {
   display_init();
   input_screen();
+  monitor_screen();
 
   for(;;) {
     lv_timer_handler(); // Should be call periodically
