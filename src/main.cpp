@@ -303,7 +303,7 @@ void motorCycle(void * arg) {
     static uint64_t recTime = millis();
     motorP1(numTime_P1);
     motorP2(numTime_P2);
-    logData((millis()-recTime)/1000);
+    logData(millis()-recTime);
     recTime = millis();
   }
 }

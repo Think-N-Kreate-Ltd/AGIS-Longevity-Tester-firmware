@@ -131,8 +131,8 @@ void newFileInit() {
 
 // do whenever the limited SW is touched
 // cycleTime = time for one cycle, can enter 0 when do not need to log
-void logData(uint8_t cycleTtime) {
-  char data[80];  // the data that should log to file
+void logData(uint64_t cycleTtime) {
+  char data[120];  // the data that should log to file
   // cal first to reduce the length
   uint16_t hour = motorRunTime/3600;
   uint8_t min = motorRunTime%3600/60;
@@ -140,7 +140,9 @@ void logData(uint8_t cycleTtime) {
   if (cycleTtime == 0) {
     sprintf(data, "%03d:%02d:%02d, N/A, %5.2f\n", hour, min, sec, avgCurrent_mA);
   } else {
-    sprintf(data, "%03d:%02d:%02d, %02d, %5.2f\n", hour, min, sec, cycleTtime, avgCurrent_mA);
+    uint8_t CT1 = cycleTtime/1000;
+    uint16_t CT2 = cycleTtime%1000;
+    sprintf(data, "%03d:%02d:%02d, %02d.%03d, %5.2f\n", hour, min, sec, CT1, CT2, avgCurrent_mA);
   }
 
   appendFile(LittleFS, filename, data);
