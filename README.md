@@ -10,6 +10,8 @@ The firmware for AGIS Longevity Tester
 
 ## I2C address:
 + INA219: 0x40
++ SCL pin: 41
++ SDA pin: 40
 
 ## Wiring
 - Keypad wiring (not soldered yet):
