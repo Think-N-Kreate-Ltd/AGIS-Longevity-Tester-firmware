@@ -159,6 +159,25 @@ void logData(uint64_t cycleTtime) {
   appendFile(LittleFS, filename, data);
 }
 
+// log the pause time 
+void logPauseData(uint64_t time) {
+  char data[80];  // the data that should log to file
+  if (pauseState) {
+    // cal first to reduce the length
+    uint16_t hour = motorRunTime/3600;
+    uint8_t min = motorRunTime%3600/60;
+    uint8_t sec = motorRunTime%60;
+    sprintf(data, "%03d:%02d:%02d, paused\n", hour, min, sec);
+  } else {
+    // cal first to reduce the length
+    uint16_t hour = time/3600;
+    uint8_t min = time%3600/60;
+    uint8_t sec = time%60;
+    sprintf(data, "N/A, resume, pause time:%03d:%02d:%02d\n", hour, min, sec);
+  }
+  appendFile(LittleFS, filename, data);
+}
+
 // log the last line, which tells the time and finish
 void endLogging() {
   appendFile(LittleFS, filename, "test and homing finish\n");

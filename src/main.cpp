@@ -185,6 +185,7 @@ void pauseAll(uint8_t i) {
   if (pauseState) {
     uint64_t recTime = millis();
     motorOn(0);
+    logPauseData();
     while (pauseState) {
       vTaskDelay(200);
     }
@@ -216,6 +217,7 @@ void pauseAll(uint8_t i) {
           vTaskDelay(20);
         }
       }
+      logPauseData((millis()-recTime)/1000);
     } else {
       // change the fail reason if needed and stop it
       if (failReason == failReason_t::NOT_YET) {
