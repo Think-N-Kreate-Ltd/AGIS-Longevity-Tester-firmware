@@ -1,4 +1,5 @@
 #include <TESTER_LOGGING.h>
+#include "AsyncElegantOTA.h"  // define after <ESPAsyncWebServer.h>
 #include <Tester_common.h>
 
 // create AsyncWebServer object on port 80
@@ -126,29 +127,72 @@ void newFileInit() {
   vTaskDelay(50);
   writeFile2(LittleFS, filename, firstLine);
   appendFile(LittleFS, filename, dateTime);
-  appendFile(LittleFS, filename, "\nTime:, Cycle Time, Current:\n");
+  appendFile(LittleFS, filename, "\nTime:, State, Cycle Time, Current:\n");
 }
 
 // do whenever the limited SW is touched
 // cycleTime = time for one cycle, can enter 0 when do not need to log
-void logData(uint8_t cycleTtime) {
-  char data[80];  // the data that should log to file
+void logData(uint64_t cycleTtime) {
+  char data[120];  // the data that should log to file
   // cal first to reduce the length
   uint16_t hour = motorRunTime/3600;
   uint8_t min = motorRunTime%3600/60;
   uint8_t sec = motorRunTime%60;
-  if (cycleTtime == 0) {
-    sprintf(data, "%03d:%02d:%02d, N/A, %5.2f\n", hour, min, sec, avgCurrent_mA);
+  char MS[5];
+  if (motorState) {
+    strcpy(MS, "down");  // reversed as we log data after state changed
   } else {
-    sprintf(data, "%03d:%02d:%02d, %02d, %5.2f\n", hour, min, sec, cycleTtime, avgCurrent_mA);
+    strcpy(MS, "up");    // reversed as we log data after state changed
+  }
+  if (cycleTtime == 0) {
+    sprintf(data, "%03d:%02d:%02d, P%d %s, N/A, %5.2f\n", hour, min, sec, cycleState, MS, avgCurrent_mA);
+  } else {
+    uint8_t CT1 = cycleTtime/1000;
+    uint16_t CT2 = cycleTtime%1000;
+    Serial.println(numCycle);
+    sprintf(data, "%03d:%02d:%02d, P%d %s, %02d.%03d", hour, min, sec, cycleState, MS, CT1, CT2);
+    char data2[127];  // too long, seperate it
+    sprintf(data2, "(%d), %5.2f\n", numCycle, avgCurrent_mA);
+    strcat(data, data2);
   }
 
+  appendFile(LittleFS, filename, data);
+}
+
+// log the pause time 
+void logPauseData(uint64_t time) {
+  char data[80];  // the data that should log to file
+  if (pauseState) {
+    // cal first to reduce the length
+    uint16_t hour = motorRunTime/3600;
+    uint8_t min = motorRunTime%3600/60;
+    uint8_t sec = motorRunTime%60;
+    sprintf(data, "%03d:%02d:%02d, paused\n", hour, min, sec);
+  } else {
+    // cal first to reduce the length
+    uint16_t hour = time/3600;
+    uint8_t min = time%3600/60;
+    uint8_t sec = time%60;
+    sprintf(data, "N/A, resume, pause time:%03d:%02d:%02d\n", hour, min, sec);
+  }
   appendFile(LittleFS, filename, data);
 }
 
 // log the last line, which tells the time and finish
 void endLogging() {
   appendFile(LittleFS, filename, "test and homing finish\n");
+  char data[50];
+  strcpy(data, "failure reason: ");
+  if (failReason == failReason_t::CURRENT_EXCEED) {
+    strcat(data, "Touch stall current");
+  }
+  if (failReason == failReason_t::TIME_OUT) {
+    strcat(data, "Time out");
+  }
+  if (failReason == failReason_t::PRESS_KEY) {
+    strcat(data, "Key `*` pressed");
+  }
+  appendFile(LittleFS, filename, data);
   Serial.println("data logging finished");
 }
 
@@ -163,6 +207,7 @@ void downLogFile() {
   });
 
   server.onNotFound(notFound); // if 404 not found, go to 404 not found
+  AsyncElegantOTA.begin(&server); // for OTA update
   server.begin();
 }
 

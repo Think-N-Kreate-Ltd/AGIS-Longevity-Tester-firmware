@@ -5,7 +5,6 @@
 #include <TESTER_INA219.h>
 #include <TESTER_LOGGING.h>
 #include <Tester_Display.h>
-#include <ui.h>
 #include <Tester_common.h>
 
 bool print = true;
@@ -24,11 +23,8 @@ ezButton limitSwitch_Down(38); // create ezButton object that attach to pin 38
 /*----------------var for control motor----------------*/
 
 volatile bool motorHoming = true;   // will directly go to homing when true
-bool motorState = true;    // for checking the motor is moving Up or Down, ture=Up
-uint64_t recordTime;       // for record the time of motor 
+uint64_t recordTime;       // for record the time of motor, mainly for testing
 uint64_t startTime = millis();      // for record the starting time of the test 
-
-bool pauseState = false;    // will pause the test will it goes to true
 
 /*-----------------var for user inputs-----------------*/
 
@@ -45,22 +41,32 @@ uint8_t T_OUT_P1DOWN = 10;  // timeout of motor of pattern 1 move down
 uint8_t T_OUT_P2UP = 2;     // timeout of motor of pattern 2 move up
 uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
 
-uint64_t sampleId = 12345678;  // the sample ID, not define yet
+uint8_t T_P2running = 1;    // running time of motor on up in pattern 2
+
+uint64_t sampleId = 12345678;  // the sample ID, should be 8 numbers
 char dateTime[64];          // string to store the start date and time
 bool loadProfile = true;    // the option of load profile, true=default, false=predefine
 bool downloadFile = false;  // when user click btn to down file, it will become true and start download
 
-/*-------------------var for display-------------------*/
+/*-------------------var for current-------------------*/
 
 float current_mA;       // the current at a specific time, unit=mA
 float avgCurrent_mA;    // the average current in pass second, unit=mA
+
+/*-------------------var for display-------------------*/
+
+bool motorState = true; // for checking the motor is moving Up or Down, ture=Up
+uint8_t cycleState = 0; // for checking the motor is moving which cycle, 0 for stop
 bool testState = false; // true after user finish input and start, until homing finish
+bool pauseState = false;// will pause the test will it goes to true
 uint64_t motorRunTime;  // the total time that the motor run, not including the pause time
+uint64_t numCycle = 0;  // for recording the number of cycle
+failReason_t failReason = failReason_t::NOT_YET;
 
 /*------------------function protypes------------------*/
 
 void stopTest();
-void pauseAll();
+void pauseAll(uint8_t i=0);
 void timeoutCheck(uint8_t timeout, uint32_t time);
 void motorOn(int PWM);
 void motorP1(uint8_t time=3);
@@ -147,7 +153,7 @@ void setup() {
 void loop() {
   // if (print) {
   //   Serial.printf("average current: %f\n", avgCurrent_mA);
-  //   Serial.printf("motor run time: %d\n", motorRunTime);
+  //   Serial.printf("start time: %s\n", dateTime);
   //   print = false;
   // }
 }
@@ -165,23 +171,60 @@ void stopTest() {
   // TODO: think how to stop it, now cannot stop for current problem
   recordTime = millis();
   testState = false;
+  cycleState = 0;
   downloadFile = true;  // TODO: remove it after we can use keypad input
   Serial.println(recordTime);
   vTaskDelay(UINT_MAX); 
 }
 
 // pause the test
+// i is for P2move up, get the time
 // do not want to use sleep as it is harmful to the program
 // can try to use delay() in main loop but not recommened
-void pauseAll() {
+void pauseAll(uint8_t i) {
   if (pauseState) {
     uint64_t recTime = millis();
+    motorOn(0);
+    logPauseData();
     while (pauseState) {
       vTaskDelay(200);
     }
 
-    // when resume, record the time again
-    startTime += (millis() - recTime);
+    if ((millis()-recTime) >= 1000) { // not double press, resume the test
+      // when resume, record the time again
+      startTime += (millis() - recTime);
+      
+      // should reach timeout. i.e., not to finish this loop before touch LS -> to bypass timeout check
+      if (motorState) {
+        if (cycleState == 1) {
+          motorOn(PWM_P1UP);
+          while (limitSwitch_Up.getStateRaw() == 1) {
+            vTaskDelay(20);
+          }
+        } else if (cycleState == 2) {
+          motorOn(PWM_P2UP);
+          uint16_t timeUsed = i*20;
+          vTaskDelay(1050-timeUsed);
+        }
+        
+      } else {
+        if (cycleState == 1) {
+          motorOn(PWM_P1DOWN);
+        } else if (cycleState == 2) {
+          motorOn(PWM_P2DOWN);
+        }
+        while (limitSwitch_Down.getStateRaw() == 1) {
+          vTaskDelay(20);
+        }
+      }
+      logPauseData((millis()-recTime)/1000);
+    } else {
+      // change the fail reason if needed and stop it
+      if (failReason == failReason_t::NOT_YET) {
+        failReason = failReason_t::PRESS_KEY;
+      }
+      stopTest(); // to prevent any unexpected non-stop, i.e. place here
+    }
   }
 }
 
@@ -190,6 +233,9 @@ void pauseAll() {
 // time = the last record time
 void timeoutCheck(uint8_t timeout, uint32_t time) {
   if ((millis()-time) >= (timeout*1000)) {
+    if (failReason == failReason_t::NOT_YET) {
+      failReason = failReason_t::TIME_OUT;
+    }
     stopTest();
   }
 }
@@ -209,32 +255,30 @@ void motorOn(int PWM) {
 }
 
 // run the motor for pattern 1
-// state should be the motorState, can help to directly change (for checking in other place)
 // time is the number of time that motor On/Down should run, default is 3
 void motorP1(uint8_t time) {
-  static bool state = true; // motor move up first
   static uint32_t recTime;
-  logData(0);
-  if (state) {
+  if (motorState) {
     motorOn(PWM_P1UP);
     recTime = millis();
     do {
       vTaskDelay(20);
-      pauseAll();
       timeoutCheck(T_OUT_P1UP, recTime);
+      pauseAll();
     } while (limitSwitch_Up.getStateRaw() == 1);
-    state = false;  // motor move down
+    motorState = false;  // motor move down
   } else {
     motorOn(PWM_P1DOWN);
     recTime = millis();
     do {
       vTaskDelay(20);
-      pauseAll();
       timeoutCheck(T_OUT_P1DOWN, recTime);
+      pauseAll();
     } while (limitSwitch_Down.getStateRaw() == 1);
-    state = true;
+    motorState = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
   }
+  logData(0);
 
   if (time >= 1) { // run the next time
     Serial.printf("pattern 1 finish half, %d times remains\n", time);
@@ -243,37 +287,36 @@ void motorP1(uint8_t time) {
 }
 
 // run the motor for pattern 2
-// state should be the motorState, can help to directly change (for checking in other place)
 // time is the number of time that motor On/Down should run, default is 7
 void motorP2(uint8_t time) {
-  static bool state = true; // motor move up first
   static uint32_t recTime;
-  logData(0);
-  if (state) {
+  if (motorState) {
     motorOn(PWM_P2UP);
     recTime = millis();
     vTaskDelay(20);
-      for (uint8_t i=0; i<50; ++i) { // total delay for 20*50=1000ms
-        if (limitSwitch_Up.getStateRaw() == 1) {
+    uint32_t count = T_P2running*50;
+      for (uint8_t i=0; i<count; ++i) { // total delay for 20*50=1000ms
+        if ((limitSwitch_Up.getStateRaw() == 1) && (millis()-recTime<=(T_P2running*1000))) {
           vTaskDelay(20);
-          pauseAll();
           timeoutCheck(T_OUT_P2UP, recTime);
+          pauseAll(i);
         } else {
-          i=50; // if touch limit SW, directory go to next state
+          i=count; // if touch limit SW, directory go to next state
         }
       }
-    state = false;  // motor move down
+    motorState = false;  // motor move down
   } else {
     motorOn(PWM_P2DOWN);
     recTime = millis();
     do {
       vTaskDelay(20);
-      pauseAll();
       timeoutCheck(T_OUT_P2DOWN, recTime);
+      pauseAll();
     } while (limitSwitch_Down.getStateRaw() == 1);
-    state = true;
+    motorState = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
   }
+  logData(0);
 
   if (time >= 1) { // run the next time
     Serial.printf("pattern 2 finish half, %d times remains\n", time);
@@ -289,17 +332,21 @@ void motorCycle(void * arg) {
   }
   Serial.println("homing completed");
 
-  // debug use
-  vTaskDelay(5000);
-  testState = true;
+  while (!testState) {  // wait until user start the test (and homing completed)
+    vTaskDelay(500);
+  }
   Serial.println("Start test");
-  vTaskDelay(2000);
+  vTaskDelay(1000); // delay for 1 sec for logging init
+  startTime = millis();
 
   for (;;) {
+    numCycle++;
     static uint64_t recTime = millis();
+    cycleState = 1;
     motorP1(numTime_P1);
+    cycleState++;
     motorP2(numTime_P2);
-    logData((millis()-recTime)/1000);
+    logData(millis()-recTime);
     recTime = millis();
   }
 }
@@ -329,6 +376,9 @@ void getI2CData(void * arg) {
     // get current data every second
     getCurrent();
     if (avgCurrent_mA >= 150) {
+      if (failReason == failReason_t::NOT_YET) {
+        failReason = failReason_t::CURRENT_EXCEED;
+      }
       stopTest();
       Serial.println(avgCurrent_mA);
     }
@@ -426,7 +476,8 @@ void enableWifi(void * arg) {
 
 void tftDisplay(void * arg) {
   display_init();
-  ui_init();
+  input_screen();
+  monitor_screen();
 
   for(;;) {
     lv_timer_handler(); // Should be call periodically
