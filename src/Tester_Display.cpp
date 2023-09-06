@@ -383,6 +383,11 @@ void infusion_monitoring_cb(lv_timer_t * timer) {
     uint8_t min = motorRunTime%3600/60;
     uint8_t sec = motorRunTime%60;
     lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 2, 1, "%03d:%02d:%02d", hour, min, sec);
+    if (pauseState) {
+      lv_table_set_cell_value(lv_obj_get_child(screenMonitor, 1), 3, 1, "Paused");
+    } else {
+      lv_table_set_cell_value(lv_obj_get_child(screenMonitor, 1), 3, 1, "N/A");
+    }
   }
 
   /*update failure reason*/
@@ -419,14 +424,14 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
     }
     else if (key == 'U') {
       data->key = LV_KEY_PREV;
-      if (failReason != failReason_t::NOT_YET) {
+      if (failReason != failReason_t::NOT_YET || pauseState) {
         Serial.println("goes here");
         lv_obj_scroll_by(lv_obj_get_child(screenMonitor, 1), 0, 50, LV_ANIM_ON);
       }
     }
     else if (key == 'D') {
       data->key = LV_KEY_NEXT;
-      if (failReason != failReason_t::NOT_YET) {
+      if (failReason != failReason_t::NOT_YET || pauseState) {
         lv_obj_scroll_by(lv_obj_get_child(screenMonitor, 1), 0, -50, LV_ANIM_ON);
       }
     }
