@@ -137,7 +137,7 @@ void set_infoarea(bool screen) {
     lv_obj_t * id_input = lv_textarea_create(widget);
     lv_textarea_set_one_line(id_input, true);
     lv_textarea_set_max_length(id_input, 8);
-    lv_obj_set_width(id_input, 80);
+    lv_obj_set_width(id_input, 60);
     char default_data[12];
     sprintf(default_data, "%d", sampleId);
     lv_textarea_set_placeholder_text(id_input, default_data);
@@ -149,7 +149,7 @@ void set_infoarea(bool screen) {
     lv_obj_t * id_input_label = lv_label_create(widget);
     lv_label_set_text(id_input_label, "Now loading");
     lv_obj_move_to_index(id_input_label, 1);
-    lv_obj_set_width(id_input_label, 80);
+    lv_obj_set_width(id_input_label, 70);
   }
 
   lv_obj_t * date_label = lv_label_create(widget);
@@ -162,6 +162,7 @@ void set_infoarea(bool screen) {
   lv_label_set_text(load_label, "Load Profile:");
   lv_obj_t * load2_label = lv_label_create(widget);
   lv_label_set_text(load2_label, "Default");
+  lv_obj_set_width(load2_label, 60);
 
   lv_obj_add_style(widget, &style, 0);
   lv_obj_move_to_index(widget, 0);
@@ -177,8 +178,7 @@ void set_insarea(bool screen) {
   } else {
     widget = lv_obj_create(screenMonitor);
   }
-  lv_obj_set_style_border_color(widget, lv_color_hex(0x000000), LV_PART_MAIN);
-  lv_obj_set_style_radius(widget, 0x00, LV_PART_MAIN);
+  lv_obj_set_style_border_opa(widget, LV_OPA_0, 0);
   lv_obj_set_size(widget, lv_pct(30), lv_pct(24));
   lv_obj_align(widget, LV_ALIGN_TOP_RIGHT, -7, 7);
   lv_obj_set_scrollbar_mode(widget, LV_SCROLLBAR_MODE_OFF);
@@ -186,6 +186,8 @@ void set_insarea(bool screen) {
   /*create objects in container*/
   lv_obj_t * ins_label = lv_label_create(widget);
   lv_label_set_text(ins_label, "INSTRUCTIONS");
+  lv_obj_set_style_text_decor(ins_label, LV_TEXT_DECOR_UNDERLINE, 0);
+
   lv_obj_t * key1_label = lv_label_create(widget);
   lv_obj_t * key2_label = lv_label_create(widget);
 
@@ -196,6 +198,10 @@ void set_insarea(bool screen) {
     lv_label_set_text(key1_label, "*:Pause/Resume");
     lv_label_set_text(key2_label, "**:Stop");
   }
+  lv_obj_set_style_bg_color(key1_label, lv_color_hex(0x00EB00), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(key1_label, LV_OPA_50, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(key2_label, lv_color_hex(0xFF0000), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(key2_label, LV_OPA_50, LV_PART_MAIN);
 
   lv_obj_add_style(widget, &style, 0);
 }
@@ -428,7 +434,6 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
     else if (key == 'U') {
       data->key = LV_KEY_PREV;
       if (failReason != failReason_t::NOT_YET || pauseState) {
-        Serial.println("goes here");
         lv_obj_scroll_by(lv_obj_get_child(screenMonitor, 1), 0, 50, LV_ANIM_ON);
       }
     }
