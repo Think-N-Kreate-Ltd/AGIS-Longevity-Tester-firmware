@@ -299,7 +299,7 @@ void motorP2(uint8_t time) {
           timeoutCheck(T_OUT_P2UP, recTime);
           pauseAll(i);
         } else {
-          i=50; // if touch limit SW, directory go to next state
+          i=count; // if touch limit SW, directory go to next state
         }
       }
     motorState = false;  // motor move down
