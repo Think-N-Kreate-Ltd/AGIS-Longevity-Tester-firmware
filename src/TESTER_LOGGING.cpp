@@ -1,4 +1,5 @@
 #include <TESTER_LOGGING.h>
+#include "AsyncElegantOTA.h"  // define after <ESPAsyncWebServer.h>
 #include <Tester_common.h>
 
 // create AsyncWebServer object on port 80
@@ -187,6 +188,7 @@ void downLogFile() {
   });
 
   server.onNotFound(notFound); // if 404 not found, go to 404 not found
+  AsyncElegantOTA.begin(&server); // for OTA update
   server.begin();
 }
 
