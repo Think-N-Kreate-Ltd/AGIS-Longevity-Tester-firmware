@@ -18,6 +18,8 @@ extern uint8_t T_OUT_P1DOWN;
 extern uint8_t T_OUT_P2UP;
 extern uint8_t T_OUT_P2DOWN;
 
+extern uint8_t T_P2running;
+
 extern uint64_t sampleId;
 extern char dateTime[64];
 extern bool loadProfile;

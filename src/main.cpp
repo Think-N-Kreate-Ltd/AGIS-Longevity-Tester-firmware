@@ -41,6 +41,8 @@ uint8_t T_OUT_P1DOWN = 10;  // timeout of motor of pattern 1 move down
 uint8_t T_OUT_P2UP = 2;     // timeout of motor of pattern 2 move up
 uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
 
+uint8_t T_P2running = 1;    // running time of motor on up in pattern 2
+
 uint64_t sampleId = 12345678;  // the sample ID, should be 8 numbers
 char dateTime[64];          // string to store the start date and time
 bool loadProfile = true;    // the option of load profile, true=default, false=predefine
@@ -290,8 +292,9 @@ void motorP2(uint8_t time) {
     motorOn(PWM_P2UP);
     recTime = millis();
     vTaskDelay(20);
-      for (uint8_t i=0; i<50; ++i) { // total delay for 20*50=1000ms
-        if ((limitSwitch_Up.getStateRaw() == 1) && (millis()-recTime<=1000)) {
+    uint32_t count = T_P2running*50;
+      for (uint8_t i=0; i<count; ++i) { // total delay for 20*50=1000ms
+        if ((limitSwitch_Up.getStateRaw() == 1) && (millis()-recTime<=(T_P2running*1000))) {
           vTaskDelay(20);
           timeoutCheck(T_OUT_P2UP, recTime);
           pauseAll(i);

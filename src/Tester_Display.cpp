@@ -269,7 +269,6 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
     lv_obj_align(obj, LV_ALIGN_TOP_MID, 0, lv_pct(28));
   } else if (index == 2) {
     set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern2");
-    set_grid_obj(obj, 4, 2, 1, 1, "Run 1s");
     sprintf(default_data, "%d", T_OUT_P2UP);
     set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
     sprintf(default_data, "%d", T_OUT_P2DOWN);
@@ -280,6 +279,8 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
     set_grid_obj_input(obj, 2, 1, 2, 1, default_data, PWM_DOWN_INDEX, index);
     sprintf(default_data, "%d", (numTime_P2+1)/2);
     set_grid_obj_input(obj, 3, 1, 1, 2, default_data, NUM_TIME_INDEX, index);
+    sprintf(default_data, "%ds", T_P2running);
+    set_grid_obj_input(obj, 4, 2, 1, 1, default_data, T_RUN_UP_INDEX, index);
     lv_obj_align(obj, LV_ALIGN_BOTTOM_MID, 0, 0);
   }
   lv_obj_move_to_index(obj, index);
@@ -338,6 +339,8 @@ static void pat2_event_cb(lv_event_t * event) {
       PWM_P2DOWN *= -1;
     } else if (i == NUM_TIME_INDEX) {
       numTime_P2 = atoi(lv_textarea_get_text(ta)) * 2 - 1;
+    } else if (i == T_RUN_UP_INDEX) {
+      T_P2running = atoi(lv_textarea_get_text(ta));
     }
     /*change the input color*/
     lv_obj_set_style_text_color(lv_obj_get_child(lv_obj_get_child(screenMain, 2), i), lv_palette_main(LV_PALETTE_GREEN), 0);
@@ -385,7 +388,7 @@ void infusion_monitoring_cb(lv_timer_t * timer) {
     lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 2, 1, "%03d:%02d:%02d", hour, min, sec);
     if (pauseState) {
       lv_table_set_cell_value(lv_obj_get_child(screenMonitor, 1), 3, 1, "Paused");
-    } else {
+    } else if (failReason == failReason_t::NOT_YET) {
       lv_table_set_cell_value(lv_obj_get_child(screenMonitor, 1), 3, 1, "N/A");
     }
   }

@@ -12,6 +12,7 @@
 #define PWM_UP_INDEX      2
 #define PWM_DOWN_INDEX    3
 #define NUM_TIME_INDEX    4
+#define T_RUN_UP_INDEX    5
 
 void display_init();
 void input_screen();
