@@ -64,7 +64,7 @@ failReason_t failReason = failReason_t::NOT_YET;
 /*------------------function protypes------------------*/
 
 void stopTest();
-void pauseAll();
+void pauseAll(uint8_t i=0);
 void timeoutCheck(uint8_t timeout, uint32_t time);
 void motorOn(int PWM);
 void motorP1(uint8_t time=3);
@@ -176,9 +176,10 @@ void stopTest() {
 }
 
 // pause the test
+// i is for P2move up, get the time
 // do not want to use sleep as it is harmful to the program
 // can try to use delay() in main loop but not recommened
-void pauseAll() {
+void pauseAll(uint8_t i) {
   if (pauseState) {
     uint64_t recTime = millis();
     motorOn(0);
@@ -186,15 +187,40 @@ void pauseAll() {
       vTaskDelay(200);
     }
 
-    // TODO: need to think how to restart
-
-    if (failReason == failReason_t::NOT_YET) {
-      failReason = failReason_t::PRESS_KEY;
+    if ((millis()-recTime) >= 1000) { // not double press, resume the test
+      // when resume, record the time again
+      startTime += (millis() - recTime);
+      
+      // should reach timeout. i.e., not to finish this loop before touch LS -> to bypass timeout check
+      if (motorState) {
+        if (cycleState == 1) {
+          motorOn(PWM_P1UP);
+          while (limitSwitch_Up.getStateRaw() == 1) {
+            vTaskDelay(20);
+          }
+        } else if (cycleState == 2) {
+          motorOn(PWM_P2UP);
+          uint16_t timeUsed = i*20;
+          vTaskDelay(1050-timeUsed);
+        }
+        
+      } else {
+        if (cycleState == 1) {
+          motorOn(PWM_P1DOWN);
+        } else if (cycleState == 2) {
+          motorOn(PWM_P2DOWN);
+        }
+        while (limitSwitch_Down.getStateRaw() == 1) {
+          vTaskDelay(20);
+        }
+      }
+    } else {
+      // change the fail reason if needed and stop it
+      if (failReason == failReason_t::NOT_YET) {
+        failReason = failReason_t::PRESS_KEY;
+      }
+      stopTest(); // to prevent any unexpected non-stop, i.e. place here
     }
-    stopTest(); // TODO: call stop when press twice(?)
-
-    // when resume, record the time again
-    startTime += (millis() - recTime);
   }
 }
 
@@ -233,8 +259,8 @@ void motorP1(uint8_t time) {
     recTime = millis();
     do {
       vTaskDelay(20);
-      pauseAll();
       timeoutCheck(T_OUT_P1UP, recTime);
+      pauseAll();
     } while (limitSwitch_Up.getStateRaw() == 1);
     motorState = false;  // motor move down
   } else {
@@ -242,8 +268,8 @@ void motorP1(uint8_t time) {
     recTime = millis();
     do {
       vTaskDelay(20);
-      pauseAll();
       timeoutCheck(T_OUT_P1DOWN, recTime);
+      pauseAll();
     } while (limitSwitch_Down.getStateRaw() == 1);
     motorState = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
@@ -265,10 +291,10 @@ void motorP2(uint8_t time) {
     recTime = millis();
     vTaskDelay(20);
       for (uint8_t i=0; i<50; ++i) { // total delay for 20*50=1000ms
-        if (limitSwitch_Up.getStateRaw() == 1) {
+        if ((limitSwitch_Up.getStateRaw() == 1) && (millis()-recTime<=1000)) {
           vTaskDelay(20);
-          pauseAll();
           timeoutCheck(T_OUT_P2UP, recTime);
+          pauseAll(i);
         } else {
           i=50; // if touch limit SW, directory go to next state
         }
@@ -279,8 +305,8 @@ void motorP2(uint8_t time) {
     recTime = millis();
     do {
       vTaskDelay(20);
-      pauseAll();
       timeoutCheck(T_OUT_P2DOWN, recTime);
+      pauseAll();
     } while (limitSwitch_Down.getStateRaw() == 1);
     motorState = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon

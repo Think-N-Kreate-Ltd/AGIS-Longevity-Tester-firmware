@@ -2,7 +2,10 @@
 The firmware for AGIS Longevity Tester
 
 ## Description
-- ...
+- for cases that failure happened but cannot do homing (stopped or still testing):
+    1. double press `*` -> if it can do homing, then it should be program problem
+    2. if still cannot do homing, press the lower LS, then try to download log file -> if able to download, it should be motor(hardware) problem
+    3. if not able to download file, record the value and cut off the power ASAP, the problem should come from the board
 
 ## Keypad key functions:
 + number keys 0->9: numbers for input fields
