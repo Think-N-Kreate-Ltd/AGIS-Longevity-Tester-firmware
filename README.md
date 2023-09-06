@@ -6,6 +6,10 @@ The firmware for AGIS Longevity Tester
     1. double press `*` -> if it can do homing, then it should be program problem
     2. if still cannot do homing, press the lower LS, then try to download log file -> if able to download, it should be motor(hardware) problem
     3. if not able to download file, record the value and cut off the power ASAP, the problem should come from the board
+- this is design for technicals or operators
+    - as it is not design for public, it will just work under normal input
+    - plz don't try to do sth strange
+- OTA can be use only after the test end, go to 192.168.0.227/update for update
 
 ## Keypad key functions:
 + number keys 0->9: numbers for input fields
