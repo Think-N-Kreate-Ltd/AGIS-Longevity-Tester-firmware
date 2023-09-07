@@ -213,8 +213,17 @@ void set_grid_obj(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t 
   lv_obj_set_grid_cell(obj, LV_GRID_ALIGN_CENTER, col_pos, col_span, LV_GRID_ALIGN_CENTER, row_pos, row_span);
   lv_obj_t * label = lv_label_create(obj);
   lv_label_set_text(label, text);
-  lv_obj_set_style_pad_all(obj, 0, 0);
+  
   lv_obj_set_style_border_opa(obj, LV_OPA_0, 0);
+  if (row_pos == 0) {
+    /*set the first row bg color*/
+    lv_obj_set_style_bg_color(obj, lv_color_hex(0xBFBFBF), LV_PART_MAIN);
+    lv_obj_set_height(obj, lv_pct(33));
+    lv_obj_set_style_pad_ver(obj, 0, 0);
+    lv_obj_set_style_radius(obj, 0x00, LV_PART_MAIN);
+  } else {
+    lv_obj_set_style_pad_all(obj, 0, 0);
+  }
 }
 
 // setting input field in grid, with specific grid and no padding
@@ -262,7 +271,7 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
   /*setting with different index*/
   char default_data[4];
   if (index == 1) {
-    set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern1");
+    set_grid_obj(obj, 0, 1, 0, 1, "Action\npat1");
     set_grid_obj(obj, 4, 2, 1, 1, "Upper LS touched");
     sprintf(default_data, "%d", T_OUT_P1UP);
     set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
@@ -276,7 +285,7 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
     set_grid_obj_input(obj, 3, 1, 1, 2, default_data, NUM_TIME_INDEX, index);
     lv_obj_align(obj, LV_ALIGN_TOP_MID, 0, lv_pct(28));
   } else if (index == 2) {
-    set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern2");
+    set_grid_obj(obj, 0, 1, 0, 1, "Action\npat2");
     sprintf(default_data, "%d", T_OUT_P2UP);
     set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
     sprintf(default_data, "%d", T_OUT_P2DOWN);

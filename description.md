@@ -13,6 +13,7 @@
     - by using text instead of using placeholder
 - remove the border of the grid
 - remove the border of the element in the grid
+- set the bg color in row 1
 
 ## bugfix
 - fix the bug that when input stop condition of P2 >1s and pause when motor run >1s, the motor will run non-stop
