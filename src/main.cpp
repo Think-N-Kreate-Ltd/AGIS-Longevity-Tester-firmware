@@ -205,7 +205,7 @@ void pauseAll(uint8_t i) {
         } else if (cycleState == 2) {
           motorOn(PWM_P2UP);
           uint16_t timeUsed = i*20;
-          vTaskDelay(1050-timeUsed);
+          vTaskDelay(T_P2running*1000 + 50 - timeUsed); // +50 for preventing error
         }
         
       } else {

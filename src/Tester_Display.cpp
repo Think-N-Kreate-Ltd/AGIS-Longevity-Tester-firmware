@@ -105,7 +105,7 @@ void monitor_screen() {
   lv_table_set_cell_value(table, 0, 0, "No. of cycles:");
   lv_table_set_cell_value(table, 1, 0, "Status (current action)");
   lv_table_set_cell_value(table, 2, 0, "Motor run time\n(HHH:MM:SS)");
-  lv_table_set_cell_value(table, 3, 0, "Failure reason");
+  lv_table_set_cell_value(table, 3, 0, "XXXX reason");  // TODO: think about this text
 
   /*Fill the second column*/
   for (int i=0; i<4; ++i) {
@@ -137,7 +137,7 @@ void set_infoarea(bool screen) {
     lv_obj_t * id_input = lv_textarea_create(widget);
     lv_textarea_set_one_line(id_input, true);
     lv_textarea_set_max_length(id_input, 8);
-    lv_obj_set_width(id_input, 80);
+    lv_obj_set_width(id_input, 60);
     char default_data[12];
     sprintf(default_data, "%d", sampleId);
     lv_textarea_set_placeholder_text(id_input, default_data);
@@ -149,7 +149,7 @@ void set_infoarea(bool screen) {
     lv_obj_t * id_input_label = lv_label_create(widget);
     lv_label_set_text(id_input_label, "Now loading");
     lv_obj_move_to_index(id_input_label, 1);
-    lv_obj_set_width(id_input_label, 80);
+    lv_obj_set_width(id_input_label, 70);
   }
 
   lv_obj_t * date_label = lv_label_create(widget);
@@ -162,6 +162,7 @@ void set_infoarea(bool screen) {
   lv_label_set_text(load_label, "Load Profile:");
   lv_obj_t * load2_label = lv_label_create(widget);
   lv_label_set_text(load2_label, "Default");
+  lv_obj_set_width(load2_label, 60);
 
   lv_obj_add_style(widget, &style, 0);
   lv_obj_move_to_index(widget, 0);
@@ -177,8 +178,7 @@ void set_insarea(bool screen) {
   } else {
     widget = lv_obj_create(screenMonitor);
   }
-  lv_obj_set_style_border_color(widget, lv_color_hex(0x000000), LV_PART_MAIN);
-  lv_obj_set_style_radius(widget, 0x00, LV_PART_MAIN);
+  lv_obj_set_style_border_opa(widget, LV_OPA_0, 0);
   lv_obj_set_size(widget, lv_pct(30), lv_pct(24));
   lv_obj_align(widget, LV_ALIGN_TOP_RIGHT, -7, 7);
   lv_obj_set_scrollbar_mode(widget, LV_SCROLLBAR_MODE_OFF);
@@ -186,6 +186,8 @@ void set_insarea(bool screen) {
   /*create objects in container*/
   lv_obj_t * ins_label = lv_label_create(widget);
   lv_label_set_text(ins_label, "INSTRUCTIONS");
+  lv_obj_set_style_text_decor(ins_label, LV_TEXT_DECOR_UNDERLINE, 0);
+
   lv_obj_t * key1_label = lv_label_create(widget);
   lv_obj_t * key2_label = lv_label_create(widget);
 
@@ -196,6 +198,10 @@ void set_insarea(bool screen) {
     lv_label_set_text(key1_label, "*:Pause/Resume");
     lv_label_set_text(key2_label, "**:Stop");
   }
+  lv_obj_set_style_bg_color(key1_label, lv_color_hex(0x00EB00), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(key1_label, LV_OPA_50, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(key2_label, lv_color_hex(0xFF0000), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(key2_label, LV_OPA_50, LV_PART_MAIN);
 
   lv_obj_add_style(widget, &style, 0);
 }
@@ -207,7 +213,17 @@ void set_grid_obj(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t 
   lv_obj_set_grid_cell(obj, LV_GRID_ALIGN_CENTER, col_pos, col_span, LV_GRID_ALIGN_CENTER, row_pos, row_span);
   lv_obj_t * label = lv_label_create(obj);
   lv_label_set_text(label, text);
-  lv_obj_set_style_pad_all(obj, 0, 0);
+  
+  lv_obj_set_style_border_opa(obj, LV_OPA_0, 0);
+  if (row_pos == 0) {
+    /*set the first row bg color*/
+    lv_obj_set_style_bg_color(obj, lv_color_hex(0xBFBFBF), LV_PART_MAIN);
+    lv_obj_set_height(obj, lv_pct(33));
+    lv_obj_set_style_pad_ver(obj, 0, 0);
+    lv_obj_set_style_radius(obj, 0x00, LV_PART_MAIN);
+  } else {
+    lv_obj_set_style_pad_all(obj, 0, 0);
+  }
 }
 
 // setting input field in grid, with specific grid and no padding
@@ -219,7 +235,7 @@ void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, ui
   
   lv_textarea_set_one_line(obj, true);
   lv_textarea_set_max_length(obj, 3);
-  lv_textarea_set_placeholder_text(obj, text);
+  lv_textarea_set_text(obj, text);
 
   lv_obj_move_to_index(obj, index);
   if (pattern == 1) {
@@ -231,6 +247,8 @@ void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, ui
   lv_group_add_obj(grp, obj);
 
   lv_obj_set_style_pad_all(obj, 0, 0);
+  lv_obj_set_style_border_opa(obj, LV_OPA_0, 0);
+  lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, 0);  // note: lv_textarea_set_align is decrecated
 }
 
 void set_patarea(lv_obj_t * obj, uint8_t index) {
@@ -254,7 +272,7 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
   /*setting with different index*/
   char default_data[4];
   if (index == 1) {
-    set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern1");
+    set_grid_obj(obj, 0, 1, 0, 1, "Action\npat1");
     set_grid_obj(obj, 4, 2, 1, 1, "Upper LS touched");
     sprintf(default_data, "%d", T_OUT_P1UP);
     set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
@@ -268,7 +286,7 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
     set_grid_obj_input(obj, 3, 1, 1, 2, default_data, NUM_TIME_INDEX, index);
     lv_obj_align(obj, LV_ALIGN_TOP_MID, 0, lv_pct(28));
   } else if (index == 2) {
-    set_grid_obj(obj, 0, 1, 0, 1, "Action\npattern2");
+    set_grid_obj(obj, 0, 1, 0, 1, "Action\npat2");
     sprintf(default_data, "%d", T_OUT_P2UP);
     set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
     sprintf(default_data, "%d", T_OUT_P2DOWN);
@@ -288,6 +306,7 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
   /*style*/
   lv_obj_set_style_pad_all(obj, 0, 0);
   lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_set_style_border_opa(obj, LV_OPA_0, 0);
 }
 
 static void pat1_event_cb(lv_event_t * event) {  
@@ -368,7 +387,7 @@ void infusion_monitoring_cb(lv_timer_t * timer) {
     lv_label_set_text(lv_obj_get_child(lv_obj_get_child(screenMonitor, 0), 3), dateTime);
   }
 
-  if (testState) {  // when start the test, update the monitor screen
+  if (testState && (cycleState!=0)) {  // when start the test, update the monitor screen
     static bool doOnceOnly = true;  // if need to run test more than one time, this statement should move outside
     if (doOnceOnly) { // only do once for update info
       lv_label_set_text_fmt(lv_obj_get_child(lv_obj_get_child(screenMonitor, 0), 1), "%08d", sampleId);
@@ -428,7 +447,6 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
     else if (key == 'U') {
       data->key = LV_KEY_PREV;
       if (failReason != failReason_t::NOT_YET || pauseState) {
-        Serial.println("goes here");
         lv_obj_scroll_by(lv_obj_get_child(screenMonitor, 1), 0, 50, LV_ANIM_ON);
       }
     }
@@ -444,6 +462,9 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
     else if (key == '*') {
       if (testState) {
         pauseState = !pauseState;
+        if (!pauseState) {
+          lv_obj_scroll_to(lv_obj_get_child(screenMonitor, 1), 0, 0, LV_ANIM_OFF);
+        }
       }
     }
     else if (key == 'F') {
