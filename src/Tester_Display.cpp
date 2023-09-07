@@ -214,6 +214,7 @@ void set_grid_obj(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, uint8_t 
   lv_obj_t * label = lv_label_create(obj);
   lv_label_set_text(label, text);
   lv_obj_set_style_pad_all(obj, 0, 0);
+  lv_obj_set_style_border_opa(obj, LV_OPA_0, 0);
 }
 
 // setting input field in grid, with specific grid and no padding
@@ -237,6 +238,7 @@ void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, ui
   lv_group_add_obj(grp, obj);
 
   lv_obj_set_style_pad_all(obj, 0, 0);
+  lv_obj_set_style_border_opa(obj, LV_OPA_0, 0);
 }
 
 void set_patarea(lv_obj_t * obj, uint8_t index) {
@@ -294,6 +296,7 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
   /*style*/
   lv_obj_set_style_pad_all(obj, 0, 0);
   lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_set_style_border_opa(obj, LV_OPA_0, 0);
 }
 
 static void pat1_event_cb(lv_event_t * event) {  

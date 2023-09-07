@@ -5,11 +5,14 @@
     - to prevent label `Date & Time:` goes to the first line
 - add width for label `Default`
 - set the ins widget to similar to the previous one, including:
-    - remove boarder
+    - remove the border
     - add underline for label `INSTRUCTION`
     - add highlighting to key label
-- set the default text in table more clear
+- set the default text in textarea more clear
+    - remove the border
     - by using text instead of using placeholder
+- remove the border of the grid
+- remove the border of the element in the grid
 
 ## bugfix
 - fix the bug that when input stop condition of P2 >1s and pause when motor run >1s, the motor will run non-stop
