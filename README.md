@@ -10,10 +10,16 @@ The firmware for AGIS Longevity Tester
     - as it is not design for public, it will just work under normal input
     - plz don't try to do sth strange
 - OTA can be use only after the test end, go to 192.168.0.227/update for update
+- better not to start the testing before get the time
 
 ## Keypad key functions:
 + number keys 0->9: numbers for input fields
-+ ...
++ `F1`, `Esc`: restart ESP
++ `F2`: start the test
++ `#`: backspace
++ `*`: pasue/resume the test only when testing
++ `Ent`: enter
++ `U`, `D`: previous/next(tap), or minitor table scroll up/down only when test paused/stopped
 
 ## I2C address:
 + INA219: 0x40
