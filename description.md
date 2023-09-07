@@ -21,3 +21,4 @@
 
 ## improvement
 - the display update the monitor screen when motor start move
+- auto scroll back the table when resume the test

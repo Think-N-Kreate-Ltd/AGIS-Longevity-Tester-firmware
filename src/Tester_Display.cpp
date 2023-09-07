@@ -462,6 +462,9 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
     else if (key == '*') {
       if (testState) {
         pauseState = !pauseState;
+        if (!pauseState) {
+          lv_obj_scroll_to(lv_obj_get_child(screenMonitor, 1), 0, 0, LV_ANIM_OFF);
+        }
       }
     }
     else if (key == 'F') {
