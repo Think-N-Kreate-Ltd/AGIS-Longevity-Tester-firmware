@@ -18,3 +18,6 @@
 
 ## bugfix
 - fix the bug that when input stop condition of P2 >1s and pause when motor run >1s, the motor will run non-stop
+
+## improvement
+- the display update the monitor screen when motor start move

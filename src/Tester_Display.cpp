@@ -387,7 +387,7 @@ void infusion_monitoring_cb(lv_timer_t * timer) {
     lv_label_set_text(lv_obj_get_child(lv_obj_get_child(screenMonitor, 0), 3), dateTime);
   }
 
-  if (testState) {  // when start the test, update the monitor screen
+  if (testState && (cycleState!=0)) {  // when start the test, update the monitor screen
     static bool doOnceOnly = true;  // if need to run test more than one time, this statement should move outside
     if (doOnceOnly) { // only do once for update info
       lv_label_set_text_fmt(lv_obj_get_child(lv_obj_get_child(screenMonitor, 0), 1), "%08d", sampleId);
