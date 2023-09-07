@@ -8,9 +8,10 @@
     - remove the border
     - add underline for label `INSTRUCTION`
     - add highlighting to key label
-- set the default text in textarea more clear
-    - remove the border
-    - by using text instead of using placeholder
+- set the default text in textarea more clear by:
+    - removing the border
+    - using text instead of using placeholder
+    - set the text in textarea align in middle
 - remove the border of the grid
 - remove the border of the element in the grid
 - set the bg color in row 1

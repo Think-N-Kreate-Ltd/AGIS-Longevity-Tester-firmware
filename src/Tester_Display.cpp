@@ -248,6 +248,7 @@ void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, ui
 
   lv_obj_set_style_pad_all(obj, 0, 0);
   lv_obj_set_style_border_opa(obj, LV_OPA_0, 0);
+  lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, 0);  // note: lv_textarea_set_align is decrecated
 }
 
 void set_patarea(lv_obj_t * obj, uint8_t index) {
