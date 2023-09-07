@@ -225,7 +225,7 @@ void set_grid_obj_input(lv_obj_t * parent, uint8_t col_pos, uint8_t col_span, ui
   
   lv_textarea_set_one_line(obj, true);
   lv_textarea_set_max_length(obj, 3);
-  lv_textarea_set_placeholder_text(obj, text);
+  lv_textarea_set_text(obj, text);
 
   lv_obj_move_to_index(obj, index);
   if (pattern == 1) {
