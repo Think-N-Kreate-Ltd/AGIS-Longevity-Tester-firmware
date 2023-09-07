@@ -24,12 +24,13 @@ void ina219SetUp() {
   ESP_LOGD(TAG, "Init INA219 success");
 }
 
-void getCurrent() {
+void getINA219Data() {
   for (int x=0; x<ARRAYLENGTH; x++) { // collect data with 25 times 1 set
     vTaskDelay(30);         // wait for I2C response
 
     // get the data from INA219
     current_mA = ina219.getCurrent_mA();
+    power_mW = ina219.getPower_mW();
 
     // calculate the average current in mA
     static float current[ARRAYLENGTH];  // save data with `ARRAYLENGTH` times 1 set

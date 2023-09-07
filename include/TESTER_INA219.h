@@ -5,6 +5,6 @@
 #define I2C_SDA 40
 
 void ina219SetUp();
-void getCurrent();
+void getINA219Data();
 
 #endif  // TESTER_INA219_H

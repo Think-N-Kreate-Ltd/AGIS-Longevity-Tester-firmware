@@ -52,6 +52,7 @@ bool downloadFile = false;  // when user click btn to down file, it will become 
 
 float current_mA;       // the current at a specific time, unit=mA
 float avgCurrent_mA;    // the average current in pass second, unit=mA
+float power_mW;
 
 /*-------------------var for display-------------------*/
 
@@ -374,7 +375,7 @@ void getI2CData(void * arg) {
   ina219SetUp();
   for (;;) {
     // get current data every second
-    getCurrent();
+    getINA219Data();
     if (avgCurrent_mA >= 150) {
       if (failReason == failReason_t::NOT_YET) {
         failReason = failReason_t::CURRENT_EXCEED;
