@@ -155,6 +155,9 @@ void logData(uint64_t cycleTtime) {
     char data2[127];  // too long, seperate it
     sprintf(data2, "(%d), %5.2f\n", numCycle, avgCurrent_mA);
     strcat(data, data2);
+
+    // append file to store motor status in FS (for cut off power)
+    appendFile(LittleFS, "/data2.txt", "a");
   }
 
   appendFile(LittleFS, filename, data);
@@ -212,23 +215,19 @@ void downLogFile() {
   server.begin();
 }
 
-// read the file for getting drip factor
+// read the file for getting info of the last test
 // `,` is used to trigger the reading and storing
 // return true if need to restart, false if resume <- for homing
-bool readResumeData(fs::FS &fs, const char * path) {
+bool readResumeData() {
   bool restart = false; // var for return
-  Serial.printf("Reading file: %s\r\n", path);
+  Serial.printf("Reading file: %s\r\n", "/data1.txt");
 
-  File file = fs.open(path);
+  File file = LittleFS.open("/data1.txt");
   if(!file || file.isDirectory()){
     Serial.println("- failed to open file for reading");
     restart = true;
     return;
   }
-
-  char DF[16]; // to store the readings
-  uint8_t count = 0;
-  uint8_t i = 0;
 
   if (!file.available()) {
     ESP_LOGW("Resume reading", "fail to open file, or empty file, restart test");
@@ -242,19 +241,51 @@ bool readResumeData(fs::FS &fs, const char * path) {
       c = file.read();  // there should be a comma then, pass it
 
       // get the file name
-      for (i=0;i<12;++i) {
-        filename[i] = file.read();
+      for (uint8_t j=0; j<12; ++j) {
+        filename[j] = file.read();
       }
       Serial.println(filename);
       c = file.read();  // there should be a comma then, pass it
 
-      // TODO: start test
-      testState = true;
+      // get user input data done in last time
+      uint16_t motorData[11]; // array to store all motor data
+      char MD[4]; // string to store the read-ed motor data
+      uint8_t count = 0;
+      uint8_t i = 0;
+      while (file.available() && (count<11)) {
+        c = file.read();
+        if (c == 44) {  // read the comma
+          *(motorData + count) = atoi(MD);
+          count++;
+          i = 0;
+          Serial.printf("%s, ", MD);
+          strcpy(MD, "");  // reset DF to NULL to store the next reading
+        } else {  
+          MD[i] = c;
+          ++i;
+        }
+      }
+      // save the motor data
+      PWM_P1UP = motorData[0];
+      PWM_P1DOWN = motorData[1];
+      PWM_P2UP = motorData[2];
+      PWM_P2DOWN = motorData[3];
+      numTime_P1 = motorData[4];
+      numTime_P2 = motorData[5];
+      T_OUT_P1UP = motorData[6];
+      T_OUT_P1DOWN = motorData[7];
+      T_OUT_P2UP = motorData[8];
+      T_OUT_P2DOWN = motorData[9];
+      T_P2running = motorData[10];
     }
   }
 
   file.close();
   return restart;
+}
+
+void saveResumeData() {
+
 }
 
 // to delete all files in a dir (not include dir)

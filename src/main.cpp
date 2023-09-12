@@ -161,6 +161,10 @@ void loop() {
 /*------------------function protypes------------------*/
 
 void stopTest() {
+  // write to file to tell that next time should not resume
+  writeFile(LittleFS, "/data1.txt", "0");
+
+  // do homing
   motorHoming = true;
   while (motorHoming) {
     vTaskDelay(200);
@@ -328,19 +332,23 @@ void motorP2(uint8_t time) {
 
 void motorCycle(void * arg) {
   // check if test resume
-  motorHoming = readResumeData(LittleFS, "/data.txt");
-  
-  while (motorHoming) {
-    vTaskDelay(20);
-  }
-  ESP_LOGI("Homing", "homing completed");
+  if (readResumeData()) {
+    while (motorHoming) {
+      vTaskDelay(20);
+    }
+    ESP_LOGI("Homing", "homing completed");
 
-  while (!testState) {  // wait until user start the test (and homing completed)
-    vTaskDelay(500);
+    while (!testState) {  // wait until user start the test (and homing completed)
+      vTaskDelay(500);
+    }
+    Serial.println("Start test");
+    vTaskDelay(1000); // delay for 1 sec for logging init
+    startTime = millis();
+  } else {  // resume the test
+    // TODO: get time and log a line to log file
+    // TODO: start test, switch to mon scr
+    testState = true;
   }
-  Serial.println("Start test");
-  vTaskDelay(1000); // delay for 1 sec for logging init
-  startTime = millis();
 
   for (;;) {
     numCycle++;
@@ -400,6 +408,9 @@ void loggingData(void * parameter) {
     if (testState) {
       newFileInit();  // create new file and header
       ESP_LOGI("Logging", "Logging initialized");
+
+      // save the user input and test info
+      saveResumeData();
       
       // after create file, wait for finish
       // data logging will be done when in needed

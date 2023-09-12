@@ -15,6 +15,7 @@
     - if not -> log filename + stop time + status(main file var L25-44, 58-63) + ?
     - new file with different name with log file (must)
     - the name had better be the same for all testing because:
+        - data1.txt & data2.txt
         - easy hard coding
         - no REM data when start ESP, how can we get the name directly?
     - log the sample ID(x) log the log file filename(o) <- sample ID is useless, in fact, we only need the filename to open the log file
@@ -23,7 +24,14 @@
     - the get wifi at start should be kept
         - cuz we need to get the start time for logging again
         - need to re-think when to disconnect WiFi
-    - need to think how to get the P2 running time
-    - need to think how to do if power cut off when doing logging
-    - need to think how to not to go homing
+    - ~~need to think how to get the P2 running time~~
+    - ~~need to think how to do if power cut off when doing logging~~
+    - ~~need to think how to not to go homing~~
     - need to think how to directly go to monitor screen in TFT
+- update idea for status:
+    - record time for start time (motor run time)(for each cycle start)
+        - also add some symbol before time, to notice that the last value is unused
+    - append 'a' whenever LS touched -> count the status
+    - append 'b' for P2 motor run time -> then cal run time <- appending use another file
+    - reset each cycle
+    - user input also need to store (store and read first) <- this one use the same file
