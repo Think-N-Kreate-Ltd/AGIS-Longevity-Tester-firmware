@@ -214,42 +214,48 @@ void downLogFile() {
 
 // read the file for getting drip factor
 // `,` is used to trigger the reading and storing
-// void readResumeData(fs::FS &fs, const char * path){
-//   Serial.printf("Reading file: %s\r\n", path);
+// return true if need to restart, false if resume <- for homing
+bool readResumeData(fs::FS &fs, const char * path) {
+  bool restart = false; // var for return
+  Serial.printf("Reading file: %s\r\n", path);
 
-//   File file = fs.open(path);
-//   if(!file || file.isDirectory()){
-//     Serial.println("- failed to open file for reading");
-//     return;
-//   }
+  File file = fs.open(path);
+  if(!file || file.isDirectory()){
+    Serial.println("- failed to open file for reading");
+    restart = true;
+    return;
+  }
 
-//   char DF[16]; // to store the readings
-//   uint8_t count = 0;
-//   uint8_t i = 0;
+  char DF[16]; // to store the readings
+  uint8_t count = 0;
+  uint8_t i = 0;
 
-//   if (!file.available()) {
-//     ESP_LOGI("Resume reading", "fail to open file, restart test");
-//   }
+  if (!file.available()) {
+    ESP_LOGW("Resume reading", "fail to open file, or empty file, restart test");
+    restart = true;
+  } else {
+    char c = file.read(); // read the last state
+    if (c == '0') { 
+      ESP_LOGI("Resume reading", "stopped last time, restart test");
+    } else {  
+      ESP_LOGI("Resume reading", "paused last time, resume test, wait a while");
+      c = file.read();  // there should be a comma then, pass it
 
-//   while(file.available()){
-//     char c = file.read();
-//     if (c == 44) {  // read the comma
-//       *(dripFactor + count) = atoi(DF);
-//       count++;
-//       i = 0;
-//       strcpy(DF, "");  // reset DF to NULL to store the next reading
-//     } else {  
-//       DF[i] = c;
-//       ++i;
-//     }
-//   }
-//   file.close();
-//   for (uint8_t j=0; j<count; ++j) {
-//     Serial.printf("the %d element of DF is %d\n", j, *(dripFactor + j));
-//   }
-//   // store the number of elements
-//   lengthOfDF = count;
-// }
+      // get the file name
+      for (i=0;i<12;++i) {
+        filename[i] = file.read();
+      }
+      Serial.println(filename);
+      c = file.read();  // there should be a comma then, pass it
+
+      // TODO: start test
+      testState = true;
+    }
+  }
+
+  file.close();
+  return restart;
+}
 
 // to delete all files in a dir (not include dir)
 // dirname="/" to delete files which is not in a dir

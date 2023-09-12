@@ -22,9 +22,9 @@ ezButton limitSwitch_Down(38); // create ezButton object that attach to pin 38
 
 /*----------------var for control motor----------------*/
 
-volatile bool motorHoming = true;   // will directly go to homing when true
-uint64_t recordTime;       // for record the time of motor, mainly for testing
-uint64_t startTime = millis();      // for record the starting time of the test 
+volatile bool motorHoming;      // will directly go to homing when true
+uint64_t recordTime;            // for record the time of motor, mainly for testing
+uint64_t startTime = millis();  // for record the starting time of the test 
 
 /*-----------------var for user inputs-----------------*/
 
@@ -327,6 +327,9 @@ void motorP2(uint8_t time) {
 /*--------------------task functions--------------------*/
 
 void motorCycle(void * arg) {
+  // check if test resume
+  motorHoming = readResumeData(LittleFS, "/data.txt");
+  
   while (motorHoming) {
     vTaskDelay(20);
   }
