@@ -2,6 +2,7 @@
 #define tester_common_h
 
 #include <Arduino.h>
+#include <esp_log.h>
 
 extern long TT;
 

@@ -20,6 +20,7 @@ void logData(uint64_t cycleTtime);
 void logPauseData(uint64_t time = 0);
 void endLogging();
 void downLogFile();
+void readDF(fs::FS &fs, const char * path);
 
 /*------------function only use for fixing FS problem------------*/
 void deleteRfStar(fs::FS &fs, const char * dirname, uint8_t levels=3);

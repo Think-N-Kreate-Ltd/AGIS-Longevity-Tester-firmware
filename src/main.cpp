@@ -165,7 +165,7 @@ void stopTest() {
   while (motorHoming) {
     vTaskDelay(200);
   }
-  Serial.println("homing completed, all stopped");
+  ESP_LOGI("Homing", "homing completed, all stopped");
 
   // all finish after homing
   // TODO: think how to stop it, now cannot stop for current problem
@@ -330,7 +330,7 @@ void motorCycle(void * arg) {
   while (motorHoming) {
     vTaskDelay(20);
   }
-  Serial.println("homing completed");
+  ESP_LOGI("Homing", "homing completed");
 
   while (!testState) {  // wait until user start the test (and homing completed)
     vTaskDelay(500);
@@ -380,7 +380,7 @@ void getI2CData(void * arg) {
         failReason = failReason_t::CURRENT_EXCEED;
       }
       stopTest();
-      Serial.println(avgCurrent_mA);
+      ESP_LOGI("Stop test", "fail reason: current:%5.2f", avgCurrent_mA);
     }
   }
 }
@@ -388,7 +388,7 @@ void getI2CData(void * arg) {
 void loggingData(void * parameter) {
   // set up
   if (!LittleFS.begin(true)) {
-    Serial.println("LittleFS Mount Failed");
+    ESP_LOGE("FS", "LittleFS Mount Failed");
     return;
   }
   static bool finishLogging = false;
@@ -396,7 +396,7 @@ void loggingData(void * parameter) {
   for (;;) {
     if (testState) {
       newFileInit();  // create new file and header
-      Serial.println("Logging initialized");
+      ESP_LOGI("Logging", "Logging initialized");
       
       // after create file, wait for finish
       // data logging will be done when in needed
@@ -437,7 +437,7 @@ void loggingData(void * parameter) {
         vTaskDelay(500);
       }
       //disconnect WiFi
-      Serial.println("WiFi disconnected");
+      ESP_LOGI("WiFi", "WiFi disconnected");
       WiFi.disconnect(true);
       WiFi.mode(WIFI_OFF);
 
@@ -460,7 +460,7 @@ void enableWifi(void * arg) {
     // get time
     struct tm timeinfo;
     while (!getLocalTime(&timeinfo)) {
-      Serial.println("Fail to obtain time");
+      ESP_LOGE("NTP time", "Fail to obtain time");
       vTaskDelay(UINT_MAX); // stop here if fail to get the time
     }
     strftime(dateTime, 64, "%d %b, %y %H:%M:%S", &timeinfo);
@@ -468,6 +468,7 @@ void enableWifi(void * arg) {
   }
 
   //disconnect WiFi
+  ESP_LOGI("WiFi", "WiFi disconnected");
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
 

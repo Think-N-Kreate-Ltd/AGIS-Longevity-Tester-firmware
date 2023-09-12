@@ -128,6 +128,7 @@ void newFileInit() {
   writeFile2(LittleFS, filename, firstLine);
   appendFile(LittleFS, filename, dateTime);
   appendFile(LittleFS, filename, "\nTime:, State, Cycle Time, Current:\n");
+  ESP_LOGI("Logging", "new file init");
 }
 
 // do whenever the limited SW is touched
@@ -193,7 +194,7 @@ void endLogging() {
     strcat(data, "Key `*` pressed");
   }
   appendFile(LittleFS, filename, data);
-  Serial.println("data logging finished");
+  ESP_LOGI("Logging", "data logging finished");
 }
 
 void notFound(AsyncWebServerRequest *request) {
@@ -210,6 +211,45 @@ void downLogFile() {
   AsyncElegantOTA.begin(&server); // for OTA update
   server.begin();
 }
+
+// read the file for getting drip factor
+// `,` is used to trigger the reading and storing
+// void readResumeData(fs::FS &fs, const char * path){
+//   Serial.printf("Reading file: %s\r\n", path);
+
+//   File file = fs.open(path);
+//   if(!file || file.isDirectory()){
+//     Serial.println("- failed to open file for reading");
+//     return;
+//   }
+
+//   char DF[16]; // to store the readings
+//   uint8_t count = 0;
+//   uint8_t i = 0;
+
+//   if (!file.available()) {
+//     ESP_LOGI("Resume reading", "fail to open file, restart test");
+//   }
+
+//   while(file.available()){
+//     char c = file.read();
+//     if (c == 44) {  // read the comma
+//       *(dripFactor + count) = atoi(DF);
+//       count++;
+//       i = 0;
+//       strcpy(DF, "");  // reset DF to NULL to store the next reading
+//     } else {  
+//       DF[i] = c;
+//       ++i;
+//     }
+//   }
+//   file.close();
+//   for (uint8_t j=0; j<count; ++j) {
+//     Serial.printf("the %d element of DF is %d\n", j, *(dripFactor + j));
+//   }
+//   // store the number of elements
+//   lengthOfDF = count;
+// }
 
 // to delete all files in a dir (not include dir)
 // dirname="/" to delete files which is not in a dir

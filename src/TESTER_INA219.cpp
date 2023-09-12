@@ -2,9 +2,6 @@
 #include <Wire.h>
 #include <Adafruit_INA219.h>
 #include <Tester_common.h>
-#include <esp_log.h>
-
-static const char* TAG = "INA219";
 
 #define ARRAYLENGTH 33
 
@@ -18,10 +15,10 @@ void ina219SetUp() {
   }
 
   if (!ina219.begin()) {
-    Serial.println("Failed to find INA219 chip");
+    ESP_LOGE("INA219", "Failed to find INA219 chip");
     while (1) { delay(10); }
   }
-  ESP_LOGD(TAG, "Init INA219 success");
+  ESP_LOGD("INA219", "Init INA219 success");
 }
 
 void getCurrent() {
