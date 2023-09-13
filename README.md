@@ -11,6 +11,7 @@ The firmware for AGIS Longevity Tester
     - plz don't try to do sth strange
 - OTA can be use only after the test end, go to 192.168.0.227/update for update
 - better not to start the testing before get the time
+- do not use esp.restart() to test the resume function
 
 ## Keypad key functions:
 + number keys 0->9: numbers for input fields

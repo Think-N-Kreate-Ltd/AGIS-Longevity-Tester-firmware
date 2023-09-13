@@ -248,8 +248,8 @@ bool readResumeData() {
       c = file.read();  // there should be a comma then, pass it
 
       // get user input data done in last time
-      uint16_t motorData[11]; // array to store all motor data
-      char MD[4]; // string to store the read-ed motor data
+      int16_t motorData[11]; // array to store all motor data
+      char MD[5]; // string to store the read-ed motor data
       uint8_t count = 0;
       uint8_t i = 0;
       while (file.available() && (count<11)) {
@@ -259,14 +259,14 @@ bool readResumeData() {
           count++;
           i = 0;
           Serial.printf("%s, ", MD);
-          strcpy(MD, "");  // reset DF to NULL to store the next reading
+          // reset DF to NULL to store the next reading
+          for (uint8_t j=0; j<5; ++j) {
+            MD[j] = 0;
+          }
         } else {  
           MD[i] = c;
           ++i;
         }
-      }
-      for (uint8_t j=0; j<11; ++j) {
-        Serial.printf("\nMD[%d] = %d", j, MD[j]);
       }
       // save the motor data
       PWM_P1UP = motorData[0];
@@ -280,6 +280,11 @@ bool readResumeData() {
       T_OUT_P2UP = motorData[8];
       T_OUT_P2DOWN = motorData[9];
       T_P2running = motorData[10];
+
+      // check the data
+      for (uint8_t j=0; j<11; ++j) {
+        Serial.printf("\nmotorData[%d] = %d", j, motorData[j]);
+      }
     }
   }
 
