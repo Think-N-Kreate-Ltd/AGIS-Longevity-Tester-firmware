@@ -22,7 +22,7 @@ ezButton limitSwitch_Down(38); // create ezButton object that attach to pin 38
 
 /*----------------var for control motor----------------*/
 
-volatile bool motorHoming = true;  // will directly go to homing when true
+volatile bool motorHoming = false;  // will directly go to homing when true
 uint64_t recordTime;            // for record the time of motor, mainly for testing
 uint64_t startTime = millis();  // for record the starting time of the test 
 bool resumeAfterCutOff;         // for finding if last time stop by cut off power
@@ -343,6 +343,7 @@ void motorCycle(void * arg) {
   // check if test resume
   resumeAfterCutOff = readResumeData();
   if (!resumeAfterCutOff) {
+    motorHoming = true;
     while (motorHoming) {
       vTaskDelay(20);
     }
@@ -374,17 +375,17 @@ void motorCycle(void * arg) {
 
 void homingRollerClamp(void * arg) {
   for(;;) {
+    while (!motorHoming) {
+      vTaskDelay(200);
+      print = true;
+    }
+
     if (limitSwitch_Down.getStateRaw() == 0) {  // touched
       motorHoming = false;
       motorOn(0);
     } else {
       // motor move down
       motorOn(-255);
-    }
-
-    while (!motorHoming) {
-      vTaskDelay(200);
-      print = true;
     }
 
     vTaskDelay(50);

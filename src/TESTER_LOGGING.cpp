@@ -147,6 +147,8 @@ void logData(uint64_t cycleTtime) {
   }
   if (cycleTtime == 0) {
     sprintf(data, "%03d:%02d:%02d, P%d %s, N/A, %5.2f\n", hour, min, sec, cycleState, MS, avgCurrent_mA);
+    // append file to store motor status in FS (for cut off power)
+    appendFile(LittleFS, "/data2.txt", "a");
   } else {
     uint8_t CT1 = cycleTtime/1000;
     uint16_t CT2 = cycleTtime%1000;
@@ -157,7 +159,9 @@ void logData(uint64_t cycleTtime) {
     strcat(data, data2);
 
     // append file to store motor status in FS (for cut off power)
-    appendFile(LittleFS, "/data2.txt", "a");
+    char dataT[64];
+    sprintf(dataT, "%d", motorRunTime);
+    writeFile2(LittleFS, "/data2.txt", dataT);
   }
 
   appendFile(LittleFS, filename, data);
