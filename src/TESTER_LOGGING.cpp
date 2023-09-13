@@ -229,11 +229,12 @@ bool readResumeData() {
   }
 
   if (!file.available()) {
-    ESP_LOGW("Resume reading", "fail to open file, or empty file, restart test");
     resume = false;
+    ESP_LOGW("Resume reading", "fail to open file, or empty file, restart test");
   } else {
     char c = file.read(); // read the last state
     if (c == '0') { 
+      resume = false;
       ESP_LOGI("Resume reading", "stopped last time, restart test");
     } else {  
       readFile(LittleFS, "/data1.txt");

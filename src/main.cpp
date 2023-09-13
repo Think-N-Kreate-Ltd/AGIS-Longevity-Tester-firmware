@@ -161,8 +161,8 @@ void setup() {
 void loop() {
   if (print) {
     // Serial.printf("average current: %f\n", avgCurrent_mA);
-    Serial.printf("Homing: %d", motorHoming);
-    Serial.printf("start time: %s\n", dateTime);
+    Serial.printf("Homing: %d, ", motorHoming);
+    Serial.printf("testState: %d\n", testState);
     print = false;
   }
 }
@@ -342,7 +342,7 @@ void motorP2(uint8_t time) {
 void motorCycle(void * arg) {
   // check if test resume
   resumeAfterCutOff = readResumeData();
-  if (resumeAfterCutOff) {
+  if (!resumeAfterCutOff) {
     while (motorHoming) {
       vTaskDelay(20);
     }
@@ -411,7 +411,7 @@ void loggingData(void * parameter) {
 
   for (;;) {
     if (testState) {
-      if(resumeAfterCutOff) {
+      if(!resumeAfterCutOff) {
         newFileInit();  // create new file and header
         ESP_LOGI("Logging", "Logging initialized");
 
