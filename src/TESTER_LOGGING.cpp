@@ -217,31 +217,31 @@ void downLogFile() {
 
 // read the file for getting info of the last test
 // `,` is used to trigger the reading and storing
-// return true if need to restart, false if resume <- for homing
+// return true if need to resume, false if restart <- for homing
 bool readResumeData() {
-  bool restart = false; // var for return
+  bool resume = true; // var for return
   Serial.printf("Reading file: %s\r\n", "/data1.txt");
 
   File file = LittleFS.open("/data1.txt");
   if(!file || file.isDirectory()){
     Serial.println("- failed to open file for reading");
-    restart = true;
-    return;
+    resume = false;
   }
 
   if (!file.available()) {
     ESP_LOGW("Resume reading", "fail to open file, or empty file, restart test");
-    restart = true;
+    resume = false;
   } else {
     char c = file.read(); // read the last state
     if (c == '0') { 
       ESP_LOGI("Resume reading", "stopped last time, restart test");
     } else {  
+      readFile(LittleFS, "/data1.txt");
       ESP_LOGI("Resume reading", "paused last time, resume test, wait a while");
       c = file.read();  // there should be a comma then, pass it
 
       // get the file name
-      for (uint8_t j=0; j<12; ++j) {
+      for (uint8_t j=0; j<13; ++j) {
         filename[j] = file.read();
       }
       Serial.println(filename);
@@ -265,6 +265,9 @@ bool readResumeData() {
           ++i;
         }
       }
+      for (uint8_t j=0; j<11; ++j) {
+        Serial.printf("\nMD[%d] = %d", j, MD[j]);
+      }
       // save the motor data
       PWM_P1UP = motorData[0];
       PWM_P1DOWN = motorData[1];
@@ -281,11 +284,25 @@ bool readResumeData() {
   }
 
   file.close();
-  return restart;
+  return resume;
 }
 
 void saveResumeData() {
+  char data[80];  // the data that should log to file
+  char data2[80];
+  char data3[80];
+  sprintf(data, "1,%s,%d,%d,", filename, PWM_P1UP, PWM_P1DOWN);
+  sprintf(data2, "%d,%d,%d,%d,", PWM_P2UP, PWM_P2DOWN, numTime_P1, numTime_P2);
+  // strcat(data, data2);
+  sprintf(data3, "%d,%d,%d,%d,%d,", T_OUT_P1UP, T_OUT_P1DOWN, T_OUT_P2UP, T_OUT_P2DOWN, T_P2running);
+  // strcat(data, data3);
 
+  writeFile2(LittleFS, "/data1.txt", data);
+  appendFile(LittleFS, "/data1.txt", data2);
+  appendFile(LittleFS, "/data1.txt", data3);
+  Serial.println(data);
+  Serial.println(data2);
+  Serial.println(data3);
 }
 
 // to delete all files in a dir (not include dir)

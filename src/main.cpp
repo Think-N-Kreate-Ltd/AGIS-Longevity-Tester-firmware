@@ -22,9 +22,10 @@ ezButton limitSwitch_Down(38); // create ezButton object that attach to pin 38
 
 /*----------------var for control motor----------------*/
 
-volatile bool motorHoming;      // will directly go to homing when true
+volatile bool motorHoming = true;  // will directly go to homing when true
 uint64_t recordTime;            // for record the time of motor, mainly for testing
 uint64_t startTime = millis();  // for record the starting time of the test 
+bool resumeAfterCutOff;         // for finding if last time stop by cut off power
 
 /*-----------------var for user inputs-----------------*/
 
@@ -96,6 +97,13 @@ void setup() {
   Serial.begin(115200);
   pinMode(TFT_CS, OUTPUT);
 
+  // set up LittleFS
+  // place here because FS must be mount first
+  if (!LittleFS.begin(true)) {
+    ESP_LOGE("FS", "LittleFS Mount Failed");
+    return;
+  }
+
   // setup for timer0
   Timer0_cfg = timerBegin(0, 8000, true);   // prescaler = 8000
   timerAttachInterrupt(Timer0_cfg, &timeCount,
@@ -151,11 +159,12 @@ void setup() {
 }
 
 void loop() {
-  // if (print) {
-  //   Serial.printf("average current: %f\n", avgCurrent_mA);
-  //   Serial.printf("start time: %s\n", dateTime);
-  //   print = false;
-  // }
+  if (print) {
+    // Serial.printf("average current: %f\n", avgCurrent_mA);
+    Serial.printf("Homing: %d", motorHoming);
+    Serial.printf("start time: %s\n", dateTime);
+    print = false;
+  }
 }
 
 /*------------------function protypes------------------*/
@@ -332,7 +341,8 @@ void motorP2(uint8_t time) {
 
 void motorCycle(void * arg) {
   // check if test resume
-  if (readResumeData()) {
+  resumeAfterCutOff = readResumeData();
+  if (resumeAfterCutOff) {
     while (motorHoming) {
       vTaskDelay(20);
     }
@@ -397,20 +407,17 @@ void getI2CData(void * arg) {
 }
 
 void loggingData(void * parameter) {
-  // set up
-  if (!LittleFS.begin(true)) {
-    ESP_LOGE("FS", "LittleFS Mount Failed");
-    return;
-  }
   static bool finishLogging = false;
 
   for (;;) {
     if (testState) {
-      newFileInit();  // create new file and header
-      ESP_LOGI("Logging", "Logging initialized");
+      if(resumeAfterCutOff) {
+        newFileInit();  // create new file and header
+        ESP_LOGI("Logging", "Logging initialized");
 
-      // save the user input and test info
-      saveResumeData();
+        // save the user input and test info
+        saveResumeData();
+      }
       
       // after create file, wait for finish
       // data logging will be done when in needed
