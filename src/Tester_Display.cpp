@@ -111,6 +111,11 @@ void monitor_screen() {
   for (int i=0; i<4; ++i) {
     lv_table_set_cell_value(table, i, 1, "N/A");
   }
+
+  /*Loads the monitor screen if resume*/
+  if (resumeAfterCutOff) {
+    lv_disp_load_scr(screenMonitor);
+  }
 }
 
 

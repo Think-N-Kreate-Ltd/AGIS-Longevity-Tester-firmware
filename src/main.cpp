@@ -25,7 +25,7 @@ ezButton limitSwitch_Down(38); // create ezButton object that attach to pin 38
 volatile bool motorHoming = false;  // will directly go to homing when true
 uint64_t recordTime;            // for record the time of motor, mainly for testing
 uint64_t startTime = millis();  // for record the starting time of the test 
-bool resumeAfterCutOff;         // for finding if last time stop by cut off power, also change to false after get all resume data
+bool resumeAfterCutOff = false; // for finding if last time stop by cut off power, also change to false after get all resume data
 
 /*-----------------var for user inputs-----------------*/
 
@@ -161,7 +161,7 @@ void setup() {
 void loop() {
   if (print) {
     // Serial.printf("average current: %f\n", avgCurrent_mA);
-    Serial.printf("Homing: %d, ", motorHoming);
+    Serial.printf("resumeAfterCutOff: %d, ", resumeAfterCutOff);
     Serial.printf("testState: %d, ", testState);
     Serial.printf("date time : %s\n", dateTime);
     print = false;
@@ -492,7 +492,7 @@ void enableWifi(void * arg) {
       vTaskDelay(UINT_MAX); // stop here if fail to get the time
     }
     strftime(dateTime, 64, "%d %b, %y %H:%M:%S", &timeinfo);
-    vTaskDelay(1000);
+    vTaskDelay(500);  // to match the tft update interval
     resumeAfterCutOff = false;  // delay first, to prevent unexpected problem
   }
 
