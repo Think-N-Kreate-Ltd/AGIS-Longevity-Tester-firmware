@@ -25,7 +25,7 @@ ezButton limitSwitch_Down(38); // create ezButton object that attach to pin 38
 volatile bool motorHoming = false;  // will directly go to homing when true
 uint64_t recordTime;            // for record the time of motor, mainly for testing
 uint64_t startTime = millis();  // for record the starting time of the test 
-bool resumeAfterCutOff;         // for finding if last time stop by cut off power
+bool resumeAfterCutOff;         // for finding if last time stop by cut off power, also change to false after get all resume data
 
 /*-----------------var for user inputs-----------------*/
 
@@ -162,7 +162,8 @@ void loop() {
   if (print) {
     // Serial.printf("average current: %f\n", avgCurrent_mA);
     Serial.printf("Homing: %d, ", motorHoming);
-    Serial.printf("testState: %d\n", testState);
+    Serial.printf("testState: %d, ", testState);
+    Serial.printf("date time : %s\n", dateTime);
     print = false;
   }
 }
@@ -172,6 +173,7 @@ void loop() {
 void stopTest() {
   // write to file to tell that next time should not resume
   writeFile(LittleFS, "/data1.txt", "0");
+  writeFile(LittleFS, "/data2.txt", "0");
 
   // do homing
   motorHoming = true;
@@ -356,7 +358,10 @@ void motorCycle(void * arg) {
     vTaskDelay(1000); // delay for 1 sec for logging init
     startTime = millis();
   } else {  // resume the test
-    // TODO: get time and log a line to log file
+    while (!strchr(dateTime, ':')) {  // wait until get time
+      vTaskDelay(100);
+    }
+    lastFileInit();
     // TODO: start test, switch to mon scr
     testState = true;
   }
@@ -478,7 +483,8 @@ void enableWifi(void * arg) {
   // config time logging with NTP server
   configTime(28800, 0, "pool.ntp.org");  // 60x60x8=28800, +8h for Hong Kong
 
-  while (!testState) {  // when user inputting
+  // TODO: think a new condition to let it do when resume also
+  while (!testState || resumeAfterCutOff) {  // when user inputting, or resume
     // get time
     struct tm timeinfo;
     while (!getLocalTime(&timeinfo)) {
@@ -487,6 +493,7 @@ void enableWifi(void * arg) {
     }
     strftime(dateTime, 64, "%d %b, %y %H:%M:%S", &timeinfo);
     vTaskDelay(1000);
+    resumeAfterCutOff = false;  // delay first, to prevent unexpected problem
   }
 
   //disconnect WiFi

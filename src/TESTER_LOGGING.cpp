@@ -131,6 +131,12 @@ void newFileInit() {
   ESP_LOGI("Logging", "new file init");
 }
 
+void lastFileInit() {
+  char firstLine[100];
+  sprintf(firstLine, "%s: cut off power and resume\n", dateTime);
+  appendFile(LittleFS, filename, firstLine);
+}
+
 // do whenever the limited SW is touched
 // cycleTime = time for one cycle, can enter 0 when do not need to log
 void logData(uint64_t cycleTtime) {

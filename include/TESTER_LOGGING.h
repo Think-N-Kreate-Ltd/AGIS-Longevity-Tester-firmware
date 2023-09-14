@@ -16,6 +16,7 @@ void appendFile(fs::FS &fs, const char * path, const char * message);
 /*-------------------function that self added-------------------*/
 
 void newFileInit();
+void lastFileInit();
 void logData(uint64_t cycleTtime);
 void logPauseData(uint64_t time = 0);
 void endLogging();
