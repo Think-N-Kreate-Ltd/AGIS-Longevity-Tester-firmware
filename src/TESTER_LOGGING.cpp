@@ -296,11 +296,53 @@ bool readResumeData() {
       for (uint8_t j=0; j<11; ++j) {
         Serial.printf("\nmotorData[%d] = %d", j, motorData[j]);
       }
+
+      // also get the data of motor status
+      readResumeData2();
     }
   }
 
   file.close();
   return resume;
+}
+
+// read the file and decode to get the last status of motor
+void readResumeData2() {
+  Serial.printf("Reading file: %s\r\n", "/data2.txt");
+
+  File file = LittleFS.open("/data2.txt");
+  if(!file || file.isDirectory()){
+    Serial.println("- failed to open file for reading");
+  }
+
+  if (!file.available()) {
+    Serial.println("fail to open file, or empty file, start from C1P1");
+  } else {
+    uint8_t counta = 0;
+    uint16_t countb = 0;
+    char MRT[8]; // to store the reading of motor run time
+    uint8_t counti = 0;
+    while (file.available()) {
+      char c = file.read();
+      if (c == 'a') {
+        counta++;
+        countb = 0;
+      } else if (c == 'b') {
+        countb++;
+      } else {
+        MRT[counti] = c;
+        counti++;
+      }
+    }
+
+    motorRunTime = atoi(MRT);
+    Serial.println(MRT);
+    Serial.printf("motorRunTime: %d, a: %d, b: %d\n", motorRunTime, counta, countb);
+    //TODO: get the motor status
+    
+  }
+
+  file.close();
 }
 
 void saveResumeData() {

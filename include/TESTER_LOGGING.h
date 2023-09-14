@@ -22,6 +22,7 @@ void logPauseData(uint64_t time = 0);
 void endLogging();
 void downLogFile();
 bool readResumeData();
+void readResumeData2();
 void saveResumeData();
 
 /*------------function only use for fixing FS problem------------*/
