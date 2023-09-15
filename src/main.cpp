@@ -26,6 +26,7 @@ volatile bool motorHoming = false;  // will directly go to homing when true
 uint64_t recordTime;            // for record the time of motor, mainly for testing
 uint64_t startTime = millis();  // for record the starting time of the test 
 bool resumeAfterCutOff = false; // for finding if last time stop by cut off power, also change to false after get all resume data
+uint64_t resumeStartTime = 0;   // for storing the time of motor run time for last test (cut off -ed)
 
 /*-----------------var for user inputs-----------------*/
 
@@ -89,7 +90,7 @@ hw_timer_t *Timer0_cfg = NULL; // create a pointer for timer0
 
 void IRAM_ATTR timeCount() {
   if (!pauseState && testState) {
-    motorRunTime = (millis() - startTime)/1000;
+    motorRunTime = (millis() - startTime + resumeStartTime)/1000;
   }
 }
 
@@ -362,8 +363,8 @@ void motorCycle(void * arg) {
       vTaskDelay(100);
     }
     lastFileInit();
-    // TODO: start test, switch to mon scr
     testState = true;
+    // TODO: run the remains first, before start looping
   }
 
   for (;;) {

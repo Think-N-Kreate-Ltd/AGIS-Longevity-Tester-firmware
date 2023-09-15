@@ -23,11 +23,13 @@
     - log the stop time and add it back to log file after resume
     - the get wifi at start should be kept
         - cuz we need to get the start time for logging again
-        - need to re-think when to disconnect WiFi
+        - ~~need to re-think when to disconnect WiFi~~
     - ~~need to think how to get the P2 running time~~
     - ~~need to think how to do if power cut off when doing logging~~
     - ~~need to think how to not to go homing~~
-    - need to think how to directly go to monitor screen in TFT
+    - ~~need to think how to directly go to monitor screen in TFT~~
+    - need to think how to get the accurate motor run time
+    - need to think how to go back to that state(in motor task) after resume
 - update idea for status:
     - record time for start time (motor run time)(for each cycle start)
         - also add some symbol before time, to notice that the last value is unused

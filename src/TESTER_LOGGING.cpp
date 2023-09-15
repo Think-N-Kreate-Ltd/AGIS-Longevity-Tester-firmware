@@ -166,7 +166,7 @@ void logData(uint64_t cycleTtime) {
 
     // append file to store motor status in FS (for cut off power)
     char dataT[64];
-    sprintf(dataT, "%d", motorRunTime);
+    sprintf(dataT, "%d,%d", numCycle, motorRunTime);
     writeFile2(LittleFS, "/data2.txt", dataT);
   }
 
@@ -320,7 +320,7 @@ void readResumeData2() {
   } else {
     uint8_t counta = 0;
     uint16_t countb = 0;
-    char MRT[8]; // to store the reading of motor run time
+    char Data[8]; // to store the reading of motor run time
     uint8_t counti = 0;
     while (file.available()) {
       char c = file.read();
@@ -329,17 +329,25 @@ void readResumeData2() {
         countb = 0;
       } else if (c == 'b') {
         countb++;
+      } else if (c == 44) { // read the comma
+        counti = 0;
+        numCycle = atoi(Data);
+        /*do no need to reset Data as numCycle must be smaller then motorRunTime*/
       } else {
-        MRT[counti] = c;
+        Data[counti] = c;
         counti++;
       }
     }
 
-    motorRunTime = atoi(MRT);
-    Serial.println(MRT);
-    Serial.printf("motorRunTime: %d, a: %d, b: %d\n", motorRunTime, counta, countb);
+    resumeStartTime = atoi(Data);
+    Serial.println(Data);
+    Serial.printf("numCycle: %d, motorRunTime: %d, a: %d, b: %d\n", numCycle, resumeStartTime, counta, countb);
     //TODO: get the motor status
-    
+    if (counta < (numTime_P1*2)) {  // pattern 1
+      cycleState = 1;
+    } else {  // pattern 2
+      cycleState = 2;
+    }
   }
 
   file.close();
