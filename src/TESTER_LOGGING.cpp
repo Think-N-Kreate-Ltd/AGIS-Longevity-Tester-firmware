@@ -120,14 +120,13 @@ void appendFile(fs::FS &fs, const char * path, const char * message){
 
 // create new file and write the info+title
 void newFileInit() {
-  char firstLine[64]; // it is seperate into 3 times to write
+  char firstLine[120]; // it is seperate into 3 to reduce the size, in fact, the final size is 90
   sprintf(filename, "/%08d.csv", sampleId);
-  sprintf(firstLine, "sample id:, %d, start time:, ", sampleId);
+  sprintf(firstLine, "sample id:, %08d, start time:, ", sampleId);
+  strcat(firstLine, dateTime);
+  strcat(firstLine, "\nTime:, State, Cycle Time, Current:\n");
 
-  vTaskDelay(50);
   writeFile2(LittleFS, filename, firstLine);
-  appendFile(LittleFS, filename, dateTime);
-  appendFile(LittleFS, filename, "\nTime:, State, Cycle Time, Current:\n");
 }
 
 // do whenever the limited SW is touched
