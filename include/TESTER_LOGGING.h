@@ -21,7 +21,7 @@ void logPauseData(uint64_t time = 0);
 void endLogging();
 void downLogFile();
 
-void storeLogData(char * str);
+void storeLogData(char * str, bool lastData = false);
 
 /*------------function only use for fixing FS problem------------*/
 void deleteRfStar(fs::FS &fs, const char * dirname, uint8_t levels=3);

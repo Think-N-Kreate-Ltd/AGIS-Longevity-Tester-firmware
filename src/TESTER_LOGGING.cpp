@@ -155,7 +155,7 @@ void logData(uint64_t cycleTtime) {
     strcat(data, data2);
   }
 
-  appendFile(LittleFS, filename, data);
+  storeLogData(data);
 }
 
 // log the pause time 
@@ -174,14 +174,13 @@ void logPauseData(uint64_t time) {
     uint8_t sec = time%60;
     sprintf(data, "N/A, resume, pause time:%03d:%02d:%02d\n", hour, min, sec);
   }
-  appendFile(LittleFS, filename, data);
+  storeLogData(data);
 }
 
 // log the last line, which tells the time and finish
 void endLogging() {
-  appendFile(LittleFS, filename, "test and homing finish\n");
-  char data[50];
-  strcpy(data, "failure reason: ");
+  char data[80] = "test and homing finish\n";
+  strcat(data, "failure reason: ");
   if (failReason == failReason_t::CURRENT_EXCEED) {
     strcat(data, "Touch stall current");
   }
@@ -191,7 +190,7 @@ void endLogging() {
   if (failReason == failReason_t::PRESS_KEY) {
     strcat(data, "Key `*` pressed");
   }
-  appendFile(LittleFS, filename, data);
+  storeLogData(data, true);
   Serial.println("data logging finished");
 }
 
@@ -201,7 +200,8 @@ void notFound(AsyncWebServerRequest *request) {
 
 // store the data that should log, until it exceed a large number
 // then log the data and reset it
-void storeLogData(char * str) {
+// directly do logging if this is the last data
+void storeLogData(char * str, bool lastData) {
   static char data[4000];  // string the store the data that should be logged (less than 4096)
   // size_t length = sizeof(str)/sizeof(char);  // for unknown reason, sizeof is hard to measure char *, or there is some misunderstanding for me
   static uint16_t length = 0;
@@ -210,9 +210,9 @@ void storeLogData(char * str) {
   strcat(data, str);
 
   if (length >= 3900) {
-    // store the data
+    // log the stored data
     appendFile(LittleFS, filename, data);
-    Serial.println(data);
+    // Serial.println(data);
     Serial.printf("length of data is %d\n", length);
 
     // reset the array
@@ -221,9 +221,11 @@ void storeLogData(char * str) {
     }
     length = 0;
     strcpy(data, "");
+  } else if (lastData) {
+    data[length] = 0;
+    appendFile(LittleFS, filename, data);
+    Serial.printf("length of data is %d\n", length);
   }
-
-  // TODO: at last append, the `i` should less than 4000, create a new string to store the array and append it
 }
 
 // to download log file in webpage
