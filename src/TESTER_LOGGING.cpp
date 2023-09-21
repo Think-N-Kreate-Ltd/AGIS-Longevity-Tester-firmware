@@ -199,6 +199,33 @@ void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
 
+// store the data that should log, until it exceed a large number
+// then log the data and reset it
+void storeLogData(char * str) {
+  static char data[4000];  // string the store the data that should be logged (less than 4096)
+  // size_t length = sizeof(str)/sizeof(char);  // for unknown reason, sizeof is hard to measure char *, or there is some misunderstanding for me
+  static uint16_t length = 0;
+  length +=strlen(str);
+
+  strcat(data, str);
+
+  if (length >= 3900) {
+    // store the data
+    appendFile(LittleFS, filename, data);
+    Serial.println(data);
+    Serial.printf("length of data is %d\n", length);
+
+    // reset the array
+    for (int j=3900; j<length; ++j) {
+      data[j] = 0;
+    }
+    length = 0;
+    strcpy(data, "");
+  }
+
+  // TODO: at last append, the `i` should less than 4000, create a new string to store the array and append it
+}
+
 // to download log file in webpage
 void downLogFile() {
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
