@@ -25,6 +25,8 @@ bool readResumeData();
 void readResumeData2();
 void saveResumeData();
 
+void storeLogData(char * str, bool lastData = false);
+
 /*------------function only use for fixing FS problem------------*/
 void deleteRfStar(fs::FS &fs, const char * dirname, uint8_t levels=3);
 
