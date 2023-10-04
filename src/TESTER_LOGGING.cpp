@@ -120,14 +120,13 @@ void appendFile(fs::FS &fs, const char * path, const char * message){
 
 // create new file and write the info+title
 void newFileInit() {
-  char firstLine[64]; // it is seperate into 3 times to write
+  char firstLine[120]; // it is seperate into 3 to reduce the size, in fact, the final size is 90
   sprintf(filename, "/%08d.csv", sampleId);
-  sprintf(firstLine, "sample id:, %d, start time:, ", sampleId);
+  sprintf(firstLine, "sample id:, %08d, start time:, ", sampleId);
+  strcat(firstLine, dateTime);
+  strcat(firstLine, "\nTime:, State, Cycle Time, Current:\n");
 
-  vTaskDelay(50);
   writeFile2(LittleFS, filename, firstLine);
-  appendFile(LittleFS, filename, dateTime);
-  appendFile(LittleFS, filename, "\nTime:, State, Cycle Time, Current:\n");
 }
 
 // do whenever the limited SW is touched
@@ -156,7 +155,7 @@ void logData(uint64_t cycleTtime) {
     strcat(data, data2);
   }
 
-  appendFile(LittleFS, filename, data);
+  storeLogData(data);
 }
 
 // log the pause time 
@@ -175,14 +174,13 @@ void logPauseData(uint64_t time) {
     uint8_t sec = time%60;
     sprintf(data, "N/A, resume, pause time:%03d:%02d:%02d\n", hour, min, sec);
   }
-  appendFile(LittleFS, filename, data);
+  storeLogData(data);
 }
 
 // log the last line, which tells the time and finish
 void endLogging() {
-  appendFile(LittleFS, filename, "test and homing finish\n");
-  char data[50];
-  strcpy(data, "failure reason: ");
+  char data[80] = "test and homing finish\n";
+  strcat(data, "failure reason: ");
   if (failReason == failReason_t::CURRENT_EXCEED) {
     strcat(data, "Touch stall current");
   }
@@ -192,12 +190,42 @@ void endLogging() {
   if (failReason == failReason_t::PRESS_KEY) {
     strcat(data, "Key `*` pressed");
   }
-  appendFile(LittleFS, filename, data);
+  storeLogData(data, true);
   Serial.println("data logging finished");
 }
 
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
+}
+
+// store the data that should log, until it exceed a large number
+// then log the data and reset it
+// directly do logging if this is the last data
+void storeLogData(char * str, bool lastData) {
+  static char data[4000];  // string the store the data that should be logged (less than 4096)
+  // size_t length = sizeof(str)/sizeof(char);  // for unknown reason, sizeof is hard to measure char *, or there is some misunderstanding for me
+  static uint16_t length = 0;
+  length +=strlen(str);
+
+  strcat(data, str);
+
+  if (length >= 3900) {
+    // log the stored data
+    appendFile(LittleFS, filename, data);
+    // Serial.println(data);
+    Serial.printf("length of data is %d\n", length);
+
+    // reset the array
+    for (int j=3900; j<length; ++j) {
+      data[j] = 0;
+    }
+    length = 0;
+    strcpy(data, "");
+  } else if (lastData) {
+    data[length] = 0;
+    appendFile(LittleFS, filename, data);
+    Serial.printf("length of data is %d\n", length);
+  }
 }
 
 // to download log file in webpage
