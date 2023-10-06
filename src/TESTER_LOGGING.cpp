@@ -141,24 +141,24 @@ void lastFileInit() {
 void logData(uint64_t cycleTtime) {
   char data[120];  // the data that should log to file
   // cal first to reduce the length
-  uint16_t hour = motorRunTime/3600;
-  uint8_t min = motorRunTime%3600/60;
-  uint8_t sec = motorRunTime%60;
+  uint16_t hour = status.motorRunTime/3600;
+  uint8_t min = status.motorRunTime%3600/60;
+  uint8_t sec = status.motorRunTime%60;
   char MS[5];
-  if (motorState) {
+  if (status.motorState) {
     strcpy(MS, "down");  // reversed as we log data after state changed
   } else {
     strcpy(MS, "up");    // reversed as we log data after state changed
   }
   if (cycleTtime == 0) {
-    sprintf(data, "%03d:%02d:%02d, P%d %s, N/A, %5.2f\n", hour, min, sec, cycleState, MS, avgCurrent_mA);
+    sprintf(data, "%03d:%02d:%02d, P%d %s, N/A, %5.2f\n", hour, min, sec, status.cycleState, MS, avgCurrent_mA);
   } else {
     uint8_t CT1 = cycleTtime/1000;
     uint16_t CT2 = cycleTtime%1000;
-    Serial.println(numCycle);
-    sprintf(data, "%03d:%02d:%02d, P%d %s, %02d.%03d", hour, min, sec, cycleState, MS, CT1, CT2);
+    Serial.println(status.numCycle);
+    sprintf(data, "%03d:%02d:%02d, P%d %s, %02d.%03d", hour, min, sec, status.cycleState, MS, CT1, CT2);
     char data2[127];  // too long, seperate it
-    sprintf(data2, "(%d), %5.2f\n", numCycle, avgCurrent_mA);
+    sprintf(data2, "(%d), %5.2f\n", status.numCycle, avgCurrent_mA);
     strcat(data, data2);
   }
 
@@ -168,11 +168,11 @@ void logData(uint64_t cycleTtime) {
 // log the pause time 
 void logPauseData(uint64_t time) {
   char data[80];  // the data that should log to file
-  if (pauseState) {
+  if (status.pauseState) {
     // cal first to reduce the length
-    uint16_t hour = motorRunTime/3600;
-    uint8_t min = motorRunTime%3600/60;
-    uint8_t sec = motorRunTime%60;
+    uint16_t hour = status.motorRunTime/3600;
+    uint8_t min = status.motorRunTime%3600/60;
+    uint8_t sec = status.motorRunTime%60;
     sprintf(data, "%03d:%02d:%02d, paused\n", hour, min, sec);
   } else {
     // cal first to reduce the length
@@ -364,7 +364,7 @@ void readResumeData2() {
         countb++;
       } else if (c == 44) { // read the comma
         counti = 0;
-        numCycle = atoi(Data);
+        status.numCycle = atoi(Data);
         /*do no need to reset Data as numCycle must be smaller then motorRunTime*/
       } else {
         Data[counti] = c;
@@ -374,12 +374,12 @@ void readResumeData2() {
 
     resumeStartTime = atoi(Data);
     Serial.println(Data);
-    Serial.printf("numCycle: %d, motorRunTime: %d, a: %d, b: %d\n", numCycle, resumeStartTime, counta, countb);
+    Serial.printf("numCycle: %d, motorRunTime: %d, a: %d, b: %d\n", status.numCycle, resumeStartTime, counta, countb);
     //TODO: get the motor status
     if (counta < (numTime_P1*2)) {  // pattern 1
-      cycleState = 1;
+      status.cycleState = 1;
     } else {  // pattern 2
-      cycleState = 2;
+      status.cycleState = 2;
     }
   }
 

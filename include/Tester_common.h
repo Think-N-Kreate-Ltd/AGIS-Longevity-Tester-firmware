@@ -33,20 +33,20 @@ extern float current_mA;
 extern float avgCurrent_mA;
 extern bool powerFail;
 
-extern bool motorState;
-extern uint8_t cycleState;
-extern bool testState;
-extern bool pauseState;
-extern uint64_t motorRunTime;
-extern uint64_t numCycle;
+// extern bool motorState;
+// extern uint8_t cycleState;
+// extern bool testState;
+// extern bool pauseState;
+// extern uint64_t motorRunTime;
+// extern uint64_t numCycle;
 
 struct MotorStatus {
-  bool motorState;
-  uint8_t cycleState;
-  bool testState;
-  bool pauseState;
-  uint64_t motorRunTime;
-  uint64_t numCycle;
+  bool motorState;      // for checking the motor is moving Up or Down, ture=Up
+  uint8_t cycleState;   // for checking the motor is moving which cycle, 0 for stop
+  bool testState;       // true after user finish input and start, until homing finish
+  bool pauseState;      // will pause the test will it goes to true
+  uint64_t motorRunTime;// the total time that the motor run, not including the pause time
+  uint64_t numCycle;    // for recording the number of cycle
 };
 extern MotorStatus status;
 
