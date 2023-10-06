@@ -186,7 +186,7 @@ void logPauseData(uint64_t time) {
 
 // TODO: quick log the status when power failure occur
 void quickLog() {
-  File file = LittleFS.open("/data1.txt", "w");
+  File file = LittleFS.open("/data2.txt", "w");
   if (!file) {
     Serial.println("fail to open file");
     return;
@@ -341,48 +341,17 @@ bool readResumeData() {
 
 // read the file and decode to get the last status of motor
 void readResumeData2() {
-  Serial.printf("Reading file: %s\r\n", "/data2.txt");
+  Serial.println("Reading file: /data2.txt");
 
-  File file = LittleFS.open("/data2.txt");
-  if(!file || file.isDirectory()){
-    Serial.println("- failed to open file for reading");
-  }
-
-  if (!file.available()) {
-    Serial.println("fail to open file, or empty file, start from C1P1");
+  File file = LittleFS.open("/data2.txt", "r");
+  if (!file) {
+    Serial.println("fail to open file");
+    return;
   } else {
-    uint8_t counta = 0;
-    uint16_t countb = 0;
-    char Data[8]; // to store the reading of motor run time
-    uint8_t counti = 0;
-    while (file.available()) {
-      char c = file.read();
-      if (c == 'a') {
-        counta++;
-        countb = 0;
-      } else if (c == 'b') {
-        countb++;
-      } else if (c == 44) { // read the comma
-        counti = 0;
-        status.numCycle = atoi(Data);
-        /*do no need to reset Data as numCycle must be smaller then motorRunTime*/
-      } else {
-        Data[counti] = c;
-        counti++;
-      }
-    }
-
-    resumeStartTime = atoi(Data);
-    Serial.println(Data);
-    Serial.printf("numCycle: %d, motorRunTime: %d, a: %d, b: %d\n", status.numCycle, resumeStartTime, counta, countb);
-    //TODO: get the motor status
-    if (counta < (numTime_P1*2)) {  // pattern 1
-      status.cycleState = 1;
-    } else {  // pattern 2
-      status.cycleState = 2;
-    }
+    file.read((uint8_t*)&status, sizeof(status));
+    Serial.printf("readings are %d, %d, %d, %d, %d, %d\n", status.motorState, status.cycleState, 
+                  status.testState, status.pauseState, status.motorRunTime, status.numCycle);
   }
-
   file.close();
 }
 
