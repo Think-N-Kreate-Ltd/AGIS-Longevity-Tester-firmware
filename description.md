@@ -51,6 +51,6 @@
     1. use EEPROG or add a super-cap to avoid power failure
     2. only log data2.txt when cut off power
     3. to fasten the logging while cut off power by:
-        - directly log the memory
+        - directly log the memory (not logging text)
         - use INA219 to check the bus voltage of the device (more spec, motor only)
-        - not use task to check power (in task, it needs time delay, which may postpone the time that do logging, also, redundent). Instead, write the value to a pin and use EXT INT to call it
+        - ~~not use task to check power (in task, it needs time delay, which may postpone the time that do logging, also, redundent). Instead, write the value to a pin and use EXT INT to call it~~ update: as INT is not able to do logging, place it at task
