@@ -31,6 +31,7 @@ extern bool downloadFile;
 
 extern float current_mA;
 extern float avgCurrent_mA;
+extern bool powerFail;
 
 extern bool motorState;
 extern uint8_t cycleState;
@@ -38,6 +39,16 @@ extern bool testState;
 extern bool pauseState;
 extern uint64_t motorRunTime;
 extern uint64_t numCycle;
+
+struct MotorStatus {
+  bool motorState;
+  uint8_t cycleState;
+  bool testState;
+  bool pauseState;
+  uint64_t motorRunTime;
+  uint64_t numCycle;
+};
+extern MotorStatus status;
 
 enum class failReason_t {
   NOT_YET,

@@ -152,8 +152,6 @@ void logData(uint64_t cycleTtime) {
   }
   if (cycleTtime == 0) {
     sprintf(data, "%03d:%02d:%02d, P%d %s, N/A, %5.2f\n", hour, min, sec, cycleState, MS, avgCurrent_mA);
-    // append file to store motor status in FS (for cut off power)
-    appendFile(LittleFS, "/data2.txt", "a");
   } else {
     uint8_t CT1 = cycleTtime/1000;
     uint16_t CT2 = cycleTtime%1000;
@@ -162,11 +160,6 @@ void logData(uint64_t cycleTtime) {
     char data2[127];  // too long, seperate it
     sprintf(data2, "(%d), %5.2f\n", numCycle, avgCurrent_mA);
     strcat(data, data2);
-
-    // append file to store motor status in FS (for cut off power)
-    char dataT[64];
-    sprintf(dataT, "%d,%d", numCycle, motorRunTime);
-    writeFile2(LittleFS, "/data2.txt", dataT);
   }
 
   storeLogData(data);
@@ -189,6 +182,18 @@ void logPauseData(uint64_t time) {
     sprintf(data, "N/A, resume, pause time:%03d:%02d:%02d\n", hour, min, sec);
   }
   storeLogData(data);
+}
+
+// TODO: quick log the status when power failure occur
+void quickLog() {
+  File file = LittleFS.open("/data1.txt", "w");
+  if (!file) {
+    Serial.println("fail to open file");
+    return;
+  } else {
+    file.write((const uint8_t*)&status, sizeof(status));
+  }
+  file.close();
 }
 
 // log the last line, which tells the time and finish

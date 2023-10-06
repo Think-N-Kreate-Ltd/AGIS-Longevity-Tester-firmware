@@ -19,6 +19,7 @@ void newFileInit();
 void lastFileInit();
 void logData(uint64_t cycleTtime);
 void logPauseData(uint64_t time = 0);
+void quickLog();
 void endLogging();
 void downLogFile();
 bool readResumeData();
