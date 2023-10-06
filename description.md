@@ -54,3 +54,5 @@
         - directly log the memory (not logging text)
         - use INA219 to check the bus voltage of the device (more spec, motor only)
         - ~~not use task to check power (in task, it needs time delay, which may postpone the time that do logging, also, redundent). Instead, write the value to a pin and use EXT INT to call it~~ update: as INT is not able to do logging, place it at task
+- think the following condition
+    - cut off power -> super-cap provide power for few sec -> re-connect to power again
