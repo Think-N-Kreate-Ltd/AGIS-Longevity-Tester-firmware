@@ -37,3 +37,20 @@
     - append 'b' for P2 motor run time -> then cal run time <- appending use another file
     - reset each cycle
     - user input also need to store (store and read first) <- this one use the same file
+
+## UPDATE: the above concept is not practical
+- cannot work because of 
+    - the limited write/erase cycle
+    - log failure due to power failure
+- but the following can still use
+    - log file to state that should the test resume next time, and if yes, give the status
+    - use 2 seperate file for logging these data (lets call it data1.txt, data2.txt)
+    - data1.txt is used to read/write const data (same as above)
+    - data2.txt is used to read/write the changing data (same concept, but need to change)
+- new concept:
+    1. use EEPROG or add a super-cap to avoid power failure
+    2. only log data2.txt when cut off power
+    3. to fasten the logging while cut off power by:
+        - directly log the memory
+        - use INA219 to check the bus voltage of the device (more spec, motor only)
+        - not use task to check power (in task, it needs time delay, which may postpone the time that do logging, also, redundent). Instead, write the value to a pin and use EXT INT to call it
