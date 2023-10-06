@@ -88,6 +88,12 @@ void tftDisplay(void * arg);
 // create pointer for timer
 hw_timer_t *Timer0_cfg = NULL; // create a pointer for timer0
 
+// call when power failure
+// quickly log the status for resume
+void IRAM_ATTR quickLog() {
+  // fastLog();
+}
+
 void IRAM_ATTR timeCount() {
   if (!pauseState && testState) {
     motorRunTime = (millis() - startTime + resumeStartTime)/1000;
@@ -97,6 +103,8 @@ void IRAM_ATTR timeCount() {
 void setup() {
   Serial.begin(115200);
   pinMode(TFT_CS, OUTPUT);
+  pinMode(42, OUTPUT); // currently just use to read power failure, may connect to TFT LED?
+  digitalWrite(42, 1);
 
   // set up LittleFS
   // place here because FS must be mount first
@@ -104,6 +112,10 @@ void setup() {
     ESP_LOGE("FS", "LittleFS Mount Failed");
     return;
   }
+
+  // call interrupt when pin 1 change from 1 to 0
+  // where it is hardcoded that this changes will apply when power failure
+  attachInterrupt(1, &quickLog, FALLING);
 
   // setup for timer0
   Timer0_cfg = timerBegin(0, 8000, true);   // prescaler = 8000

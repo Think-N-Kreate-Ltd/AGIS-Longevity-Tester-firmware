@@ -27,6 +27,10 @@ void getCurrent() {
 
     // get the data from INA219
     current_mA = ina219.getCurrent_mA();
+    // mark as power failure if V<11
+    if (ina219.getBusVoltage_V()<11) {
+      digitalWrite(42, 0);
+    }
 
     // calculate the average current in mA
     static float current[ARRAYLENGTH];  // save data with `ARRAYLENGTH` times 1 set
