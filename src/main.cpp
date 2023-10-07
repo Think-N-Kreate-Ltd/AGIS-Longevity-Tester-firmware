@@ -365,12 +365,15 @@ void motorCycle(void * arg) {
     lastFileInit();
     // status.testState = true;
     // TODO: run the remains first, before start looping
+    uint64_t recTime = millis();
     if (status.cycleState == 1) {
       motorP1(numTime_P1 - status.passedNum);
+      status.cycleState++;
       motorP2(numTime_P2);
     } else {
       motorP2(numTime_P2 - status.passedNum);
     }
+    logData(millis()-recTime);
   }
 
   for (;;) {
