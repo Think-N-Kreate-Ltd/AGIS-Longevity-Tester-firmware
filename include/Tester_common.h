@@ -47,6 +47,7 @@ struct MotorStatus {
   bool pauseState;      // will pause the test will it goes to true
   uint64_t motorRunTime;// the total time that the motor run, not including the pause time
   uint64_t numCycle;    // for recording the number of cycle
+  uint8_t passedNum;    // new added, to record how many time the LS is touched in a cycle
 };
 extern MotorStatus status;
 

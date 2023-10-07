@@ -296,6 +296,7 @@ void motorP1(uint8_t time) {
 
   if (time >= 1) { // run the next time
     Serial.printf("pattern 1 finish half, %d times remains\n", time);
+    status.passedNum++;
     motorP1(time-1);
   }
 }
@@ -334,6 +335,7 @@ void motorP2(uint8_t time) {
 
   if (time >= 1) { // run the next time
     Serial.printf("pattern 2 finish half, %d times remains\n", time);
+    status.passedNum++;
     motorP2(time-1);
   }
 }
@@ -361,16 +363,24 @@ void motorCycle(void * arg) {
       vTaskDelay(100);
     }
     lastFileInit();
-    status.testState = true;
+    // status.testState = true;
     // TODO: run the remains first, before start looping
+    if (status.cycleState == 1) {
+      motorP1(numTime_P1 - status.passedNum);
+      motorP2(numTime_P2);
+    } else {
+      motorP2(numTime_P2 - status.passedNum);
+    }
   }
 
   for (;;) {
     status.numCycle++;
+    status.passedNum = 0;
     static uint64_t recTime = millis();
     status.cycleState = 1;
     motorP1(numTime_P1);
     status.cycleState++;
+    status.passedNum = 0;
     motorP2(numTime_P2);
     logData(millis()-recTime);
     recTime = millis();
@@ -432,7 +442,7 @@ void loggingData(void * parameter) {
         if (powerFail) {
           Serial.println("power fail occur");
           quickLog();
-          storeLogData((char*)11, true); // write the buffer to file, and add a VT
+          storeLogData("", true); // write the buffer to file, and add a VT
           vTaskDelay(20000);  // assume the back up power will used up within 20s
         }
       }
