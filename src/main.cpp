@@ -99,6 +99,8 @@ void setup() {
   if (!LittleFS.begin(true)) {
     ESP_LOGE("FS", "LittleFS Mount Failed");
     return;
+  } else {
+    listDir(LittleFS, "/", 2);
   }
 
   // setup for timer0
@@ -156,13 +158,13 @@ void setup() {
 }
 
 void loop() {
-  if (print) {
-    // Serial.printf("average current: %f\n", avgCurrent_mA);
-    Serial.printf("resumeAfterCutOff: %d, ", resumeAfterCutOff);
-    Serial.printf("testState: %d, ", status.testState);
-    Serial.printf("date time : %s\n", dateTime);
-    print = false;
-  }
+  // if (print) {
+  //   // Serial.printf("average current: %f\n", avgCurrent_mA);
+  //   Serial.printf("resumeAfterCutOff: %d, ", resumeAfterCutOff);
+  //   Serial.printf("testState: %d, ", status.testState);
+  //   Serial.printf("date time : %s\n", dateTime);
+  //   print = false;
+  // }
 }
 
 /*------------------function protypes------------------*/
@@ -428,7 +430,10 @@ void loggingData(void * parameter) {
         vTaskDelay(500);
         // logData();
         if (powerFail) {
+          Serial.println("power fail occur");
           quickLog();
+          storeLogData((char*)11, true); // write the buffer to file, and add a VT
+          vTaskDelay(20000);  // assume the back up power will used up within 20s
         }
       }
 
