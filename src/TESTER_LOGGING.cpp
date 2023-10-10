@@ -349,9 +349,9 @@ void readResumeData2() {
     return;
   } else {
     file.read((uint8_t*)&status, sizeof(status));
-    resumeStartTime = status.motorRunTime;  // udpate the motor run time
-    Serial.printf("readings are %d, %d, %d, %d, %d, %d\n", status.motorState, status.cycleState, 
-                  status.testState, status.pauseState, status.motorRunTime, status.numCycle);
+    // resumeStartTime = status.motorRunTime;  // udpate the motor run time
+    Serial.printf("readings are %d, %d, %d, %d, %d, %d, %d\n", status.motorState, status.cycleState, 
+                  status.testState, status.pauseState, status.motorRunTime, status.numCycle, status.testState);
   }
   file.close();
 }

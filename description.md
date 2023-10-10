@@ -54,5 +54,11 @@
         - directly log the memory (not logging text)
         - use INA219 to check the bus voltage of the device (more spec, motor only)
         - ~~not use task to check power (in task, it needs time delay, which may postpone the time that do logging, also, redundent). Instead, write the value to a pin and use EXT INT to call it~~ update: as INT is not able to do logging, place it at task
+- sth new changes:
+    1. the motor run time use counting to measure the time because of 
+        - with unknown reasons, `status.mototRunTime` cannot copy to `resumeStartTime`
+        - in theory, millis() cannot run more than a month
+        - thus, plz be aware when changing the timer timing interval
 - think the following condition
     - cut off power -> super-cap provide power for few sec -> re-connect to power again
+    - pause -> cut off power 

@@ -26,7 +26,7 @@ volatile bool motorHoming = false;  // will directly go to homing when true
 uint64_t recordTime;            // for record the time of motor, mainly for testing
 uint64_t startTime = millis();  // for record the starting time of the test 
 bool resumeAfterCutOff = false; // for finding if last time stop by cut off power, also change to false after get all resume data
-uint64_t resumeStartTime = 0;   // for storing the time of motor run time for last test (cut off -ed)
+// uint64_t resumeStartTime = 0;   // for storing the time of motor run time for last test (cut off -ed)
 
 /*-----------------var for user inputs-----------------*/
 
@@ -86,7 +86,13 @@ hw_timer_t *Timer0_cfg = NULL; // create a pointer for timer0
 
 void IRAM_ATTR timeCount() {
   if (!status.pauseState && status.testState) {
-    status.motorRunTime = (millis() - startTime + resumeStartTime)/1000;
+    static uint8_t count = 0;
+    if (count == 1) {
+      status.motorRunTime++;
+      count = 0;
+    } else {
+      count++;
+    }
   }
 }
 
@@ -436,11 +442,16 @@ void loggingData(void * parameter) {
         // save the user input and test info
         saveResumeData();
       }
+
+      // to prevent from checking power before connecting power
+      // i.e. for testing currently: connect to microUSB -> cut off power -> reboot ESP -> turn on power
+      // it should be useless after we can do from hardware
+      // but better keep this 5s delay as it have no negative impact but may prevent unexpected condition
+      vTaskDelay(5000);
       
       // after create file, wait for finish
       // data logging will be done when in needed
       while (status.testState)  {
-        vTaskDelay(500);
         // logData();
         if (powerFail) {
           Serial.println("power fail occur");
@@ -448,6 +459,8 @@ void loggingData(void * parameter) {
           storeLogData("", true); // write the buffer to file, and add a VT
           vTaskDelay(20000);  // assume the back up power will used up within 20s
         }
+
+        vTaskDelay(500);  // put this after checking power to prevent triggered by stopping
       }
 
       finishLogging = true;

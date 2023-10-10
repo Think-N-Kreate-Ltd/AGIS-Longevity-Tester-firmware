@@ -7,7 +7,7 @@
 extern long TT;
 
 extern bool resumeAfterCutOff;
-extern uint64_t resumeStartTime;
+// extern uint64_t resumeStartTime;
 
 extern int16_t PWM_P1UP;
 extern int16_t PWM_P1DOWN;
