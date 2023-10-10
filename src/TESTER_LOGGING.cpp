@@ -133,7 +133,8 @@ void newFileInit() {
 void lastFileInit() {
   char firstLine[100];
   sprintf(firstLine, "%s: cut off power and resume\n", dateTime);
-  appendFile(LittleFS, filename, firstLine);
+  // appendFile(LittleFS, filename, firstLine);
+  storeLogData(firstLine);
 }
 
 // do whenever the limited SW is touched
@@ -357,21 +358,21 @@ void readResumeData2() {
 }
 
 void saveResumeData() {
-  char data[80];  // the data that should log to file
+  char data[160];  // the data that should log to file
   char data2[80];
   char data3[80];
   sprintf(data, "1,%s,%d,%d,", filename, PWM_P1UP, PWM_P1DOWN);
   sprintf(data2, "%d,%d,%d,%d,", PWM_P2UP, PWM_P2DOWN, numTime_P1, numTime_P2);
-  // strcat(data, data2);
+  strcat(data, data2);
   sprintf(data3, "%d,%d,%d,%d,%d,", T_OUT_P1UP, T_OUT_P1DOWN, T_OUT_P2UP, T_OUT_P2DOWN, T_P2running);
-  // strcat(data, data3);
+  strcat(data, data3);
 
   writeFile2(LittleFS, "/data1.txt", data);
-  appendFile(LittleFS, "/data1.txt", data2);
-  appendFile(LittleFS, "/data1.txt", data3);
+  // appendFile(LittleFS, "/data1.txt", data2);
+  // appendFile(LittleFS, "/data1.txt", data3);
   Serial.println(data);
-  Serial.println(data2);
-  Serial.println(data3);
+  // Serial.println(data2);
+  // Serial.println(data3);
 }
 
 // to delete all files in a dir (not include dir)
