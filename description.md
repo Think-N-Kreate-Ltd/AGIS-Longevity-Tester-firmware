@@ -62,3 +62,4 @@
 - think the following condition
     - cut off power -> super-cap provide power for few sec -> re-connect to power again
     - pause -> cut off power 
+    - cut off -> resume -> motor run time start counting before motor running
