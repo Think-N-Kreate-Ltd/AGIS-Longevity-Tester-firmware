@@ -60,7 +60,7 @@
         - in theory, millis() cannot run more than a month
         - thus, plz be aware when changing the timer timing interval
 - think the following condition
-    - cut off power -> super-cap provide power for few sec -> re-connect to power again
+    - ~~cut off power -> super-cap provide power for few sec -> re-connect to power again~~
     - pause -> cut off power 
     - cut off -> resume -> motor run time start counting before motor running
-    - cut off power -> super-cap provide power for few sec -> reach timeout
+    - ~~cut off power -> super-cap provide power for few sec -> reach timeout~~

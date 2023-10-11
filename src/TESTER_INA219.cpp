@@ -30,7 +30,7 @@ void getCurrent() {
     // mark as power failure if V<11
     if (!powerFail && ina219.getBusVoltage_V()<11) {
       powerFail = true;
-    } else if (powerFail && ina219.getBusVoltage_V()>11.5) {
+    } else if (powerFail && ina219.getBusVoltage_V()>11) {
       powerFail = false;
     }
 

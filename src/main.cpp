@@ -24,9 +24,10 @@ ezButton limitSwitch_Down(38); // create ezButton object that attach to pin 38
 
 volatile bool motorHoming = false;  // will directly go to homing when true
 uint64_t recordTime;            // for record the time of motor, mainly for testing
-uint64_t startTime = millis();  // for record the starting time of the test 
+// uint64_t startTime = millis();  // for record the starting time of the test 
 bool resumeAfterCutOff = false; // for finding if last time stop by cut off power, also change to false after get all resume data
 // uint64_t resumeStartTime = 0;   // for storing the time of motor run time for last test (cut off -ed)
+uint64_t powerFailRecTime = 0;  // for record how long did power fail occur
 
 /*-----------------var for user inputs-----------------*/
 
@@ -211,7 +212,7 @@ void pauseAll(uint8_t i) {
 
     if ((millis()-recTime) >= 1000) { // not double press, resume the test
       // when resume, record the time again
-      startTime += (millis() - recTime);
+      // startTime += (millis() - recTime);
       
       // should reach timeout. i.e., not to finish this loop before touch LS -> to bypass timeout check
       if (status.motorState) {
@@ -282,7 +283,7 @@ void motorP1(uint8_t time) {
     recTime = millis();
     do {
       vTaskDelay(20);
-      timeoutCheck(T_OUT_P1UP, recTime);
+      timeoutCheck(T_OUT_P1UP, recTime-powerFailRecTime);
       pauseAll();
     } while (limitSwitch_Up.getStateRaw() == 1);
     status.motorState = false;  // motor move down
@@ -291,13 +292,14 @@ void motorP1(uint8_t time) {
     recTime = millis();
     do {
       vTaskDelay(20);
-      timeoutCheck(T_OUT_P1DOWN, recTime);
+      timeoutCheck(T_OUT_P1DOWN, recTime-powerFailRecTime);
       pauseAll();
     } while (limitSwitch_Down.getStateRaw() == 1);
     status.motorState = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
   }
   logData(0);
+  powerFailRecTime = 0;
 
   if (time >= 1) { // run the next time
     Serial.printf("pattern 1 finish half, %d times remains\n", time);
@@ -318,7 +320,7 @@ void motorP2(uint8_t time) {
       for (uint8_t i=0; i<count; ++i) { // total delay for 20*50=1000ms
         if ((limitSwitch_Up.getStateRaw() == 1) && (millis()-recTime<=(T_P2running*1000))) {
           vTaskDelay(20);
-          timeoutCheck(T_OUT_P2UP, recTime);
+          timeoutCheck(T_OUT_P2UP, recTime-powerFailRecTime);
           pauseAll(i);
         } else {
           i=count; // if touch limit SW, directory go to next state
@@ -330,13 +332,14 @@ void motorP2(uint8_t time) {
     recTime = millis();
     do {
       vTaskDelay(20);
-      timeoutCheck(T_OUT_P2DOWN, recTime);
+      timeoutCheck(T_OUT_P2DOWN, recTime-powerFailRecTime);
       pauseAll();
     } while (limitSwitch_Down.getStateRaw() == 1);
     status.motorState = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
   }
   logData(0);
+  powerFailRecTime = 0;
 
   if (time >= 1) { // run the next time
     Serial.printf("pattern 2 finish half, %d times remains\n", time);
@@ -362,7 +365,7 @@ void motorCycle(void * arg) {
     }
     Serial.println("Start test");
     vTaskDelay(1000); // delay for 1 sec for logging init
-    startTime = millis();
+    // startTime = millis();
   } else {  // resume the test
     while (!strchr(dateTime, ':')) {  // wait until get time
       vTaskDelay(100);
@@ -453,9 +456,32 @@ void loggingData(void * parameter) {
         // logData();
         if (powerFail) {
           Serial.println("power fail occur");
+
+          // pause it to stop the motor run time
+          status.pauseState = true;
+
+          // log all data before memory lost
           quickLog();
-          storeLogData("", true); // write the buffer to file, and add a VT
-          vTaskDelay(20000);  // assume the back up power will used up within 20s
+          storeLogData("", true); // write the buffer to file. Warning is not important, or add a NULL char * to remove it
+          
+          // prevent from calling it second time
+          // pauseAll();  // should not call pauseAll, but should work similar
+          if (status.pauseState) {
+            powerFailRecTime = 0;
+            // motorOn(0);  // s.t. we can not to output to motor to move it if resume soon
+            logPauseData();
+            while (status.pauseState) {
+              vTaskDelay(50);
+              powerFailRecTime += 50;
+              Serial.println(powerFailRecTime);
+              if (!powerFail) {
+                // when power connect back, resume everything
+                status.pauseState = false;
+                logPauseData((millis()-powerFailRecTime)/1000);
+              }
+            }
+          }
+          // vTaskDelay(20000);  // assume the back up power will used up within 20s
         }
 
         vTaskDelay(500);  // put this after checking power to prevent triggered by stopping
