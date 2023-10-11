@@ -105,7 +105,7 @@ void monitor_screen() {
   lv_table_set_cell_value(table, 0, 0, "No. of cycles:");
   lv_table_set_cell_value(table, 1, 0, "Status (current action)");
   lv_table_set_cell_value(table, 2, 0, "Motor run time\n(HHH:MM:SS)");
-  lv_table_set_cell_value(table, 3, 0, "Tester state");  // TODO: think about this text
+  lv_table_set_cell_value(table, 3, 0, "Tester state");
 
   /*Fill the second column*/
   for (int i=0; i<4; ++i) {

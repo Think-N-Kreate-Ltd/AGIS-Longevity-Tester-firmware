@@ -188,7 +188,6 @@ void stopTest() {
   ESP_LOGI("Homing", "homing completed, all stopped");
 
   // all finish after homing
-  // TODO: think how to stop it, now cannot stop for current problem
   recordTime = millis();
   status.testState = false;
   status.cycleState = 0;
@@ -370,7 +369,6 @@ void motorCycle(void * arg) {
     }
     lastFileInit();
     // status.testState = true;
-    // TODO: run the remains first, before start looping
     uint64_t recTime = millis();
     if (status.cycleState == 1) {
       motorP1(numTime_P1 - status.passedNum);
@@ -514,7 +512,6 @@ void enableWifi(void * arg) {
   // config time logging with NTP server
   configTime(28800, 0, "pool.ntp.org");  // 60x60x8=28800, +8h for Hong Kong
 
-  // TODO: think a new condition to let it do when resume also
   while (!status.testState || resumeAfterCutOff) {  // when user inputting, or resume
     // get time
     struct tm timeinfo;

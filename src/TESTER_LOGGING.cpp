@@ -185,7 +185,6 @@ void logPauseData(uint64_t time) {
   storeLogData(data);
 }
 
-// TODO: quick log the status when power failure occur
 void quickLog() {
   File file = LittleFS.open("/data2.txt", "w");
   if (!file) {
