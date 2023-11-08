@@ -462,7 +462,7 @@ void loggingData(void * parameter) {
 
           // log all data before memory lost
           quickLog();
-          storeLogData("", true); // write the buffer to file. Warning is not important, or add a NULL char * to remove it
+          storeLogData("\0", true); // write the buffer to file. Warning is not important, or add a NULL char * to remove it
           
           // prevent from calling it second time
           // pauseAll();  // should not call pauseAll, but should work similar
@@ -477,7 +477,7 @@ void loggingData(void * parameter) {
               if (!powerFail) {
                 // when power connect back, resume everything
                 status.pauseState = false;
-                logPauseData((millis()-powerFailRecTime)/1000);
+                logPauseData(powerFailRecTime/1000);
               }
             }
           }

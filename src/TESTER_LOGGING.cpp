@@ -239,11 +239,12 @@ void storeLogData(char * str, bool lastData) {
       data[j] = 0;
     }
     length = 0;
-    strcpy(data, "");
+    strcpy(data, "\0");
   } else if (lastData) {
     data[length] = 0;
     appendFile(LittleFS, filename, data);
     Serial.printf("length of data is %d\n", length);
+    length = 0;
   }
 }
 
