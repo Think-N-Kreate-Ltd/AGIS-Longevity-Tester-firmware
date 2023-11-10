@@ -16,10 +16,15 @@ void appendFile(fs::FS &fs, const char * path, const char * message);
 /*-------------------function that self added-------------------*/
 
 void newFileInit();
+void lastFileInit();
 void logData(uint64_t cycleTtime);
 void logPauseData(uint64_t time = 0);
+void quickLog();
 void endLogging();
 void downLogFile();
+bool readResumeData();
+void readResumeData2();
+void saveResumeData();
 
 void storeLogData(char * str, bool lastData = false);
 

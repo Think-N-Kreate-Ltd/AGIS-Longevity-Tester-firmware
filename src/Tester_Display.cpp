@@ -105,11 +105,16 @@ void monitor_screen() {
   lv_table_set_cell_value(table, 0, 0, "No. of cycles:");
   lv_table_set_cell_value(table, 1, 0, "Status (current action)");
   lv_table_set_cell_value(table, 2, 0, "Motor run time\n(HHH:MM:SS)");
-  lv_table_set_cell_value(table, 3, 0, "XXXX reason");  // TODO: think about this text
+  lv_table_set_cell_value(table, 3, 0, "Tester state");
 
   /*Fill the second column*/
   for (int i=0; i<4; ++i) {
     lv_table_set_cell_value(table, i, 1, "N/A");
+  }
+
+  /*Loads the monitor screen if resume*/
+  if (resumeAfterCutOff) {
+    lv_disp_load_scr(screenMonitor);
   }
 }
 
@@ -387,7 +392,7 @@ void infusion_monitoring_cb(lv_timer_t * timer) {
     lv_label_set_text(lv_obj_get_child(lv_obj_get_child(screenMonitor, 0), 3), dateTime);
   }
 
-  if (testState && (cycleState!=0)) {  // when start the test, update the monitor screen
+  if (status.testState && (status.cycleState!=0)) {  // when start the test, update the monitor screen
     static bool doOnceOnly = true;  // if need to run test more than one time, this statement should move outside
     if (doOnceOnly) { // only do once for update info
       lv_label_set_text_fmt(lv_obj_get_child(lv_obj_get_child(screenMonitor, 0), 1), "%08d", sampleId);
@@ -395,17 +400,17 @@ void infusion_monitoring_cb(lv_timer_t * timer) {
     }
 
     /*update table when testing*/
-    lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 0, 1, "%d", numCycle);
-    if (motorState) {
-      lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 1, 1, "Pattern %d > Motor Up", cycleState);
+    lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 0, 1, "%d", status.numCycle);
+    if (status.motorState) {
+      lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 1, 1, "Pattern %d > Motor Up", status.cycleState);
     } else {
-      lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 1, 1, "Pattern %d > Motor Down", cycleState);
+      lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 1, 1, "Pattern %d > Motor Down", status.cycleState);
     }
-    uint16_t hour = motorRunTime/3600;
-    uint8_t min = motorRunTime%3600/60;
-    uint8_t sec = motorRunTime%60;
+    uint16_t hour = status.motorRunTime/3600;
+    uint8_t min = status.motorRunTime%3600/60;
+    uint8_t sec = status.motorRunTime%60;
     lv_table_set_cell_value_fmt(lv_obj_get_child(screenMonitor, 1), 2, 1, "%03d:%02d:%02d", hour, min, sec);
-    if (pauseState) {
+    if (status.pauseState) {
       lv_table_set_cell_value(lv_obj_get_child(screenMonitor, 1), 3, 1, "Paused");
     } else if (failReason == failReason_t::NOT_YET) {
       lv_table_set_cell_value(lv_obj_get_child(screenMonitor, 1), 3, 1, "N/A");
@@ -446,13 +451,13 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
     }
     else if (key == 'U') {
       data->key = LV_KEY_PREV;
-      if (failReason != failReason_t::NOT_YET || pauseState) {
+      if (failReason != failReason_t::NOT_YET || status.pauseState) {
         lv_obj_scroll_by(lv_obj_get_child(screenMonitor, 1), 0, 50, LV_ANIM_ON);
       }
     }
     else if (key == 'D') {
       data->key = LV_KEY_NEXT;
-      if (failReason != failReason_t::NOT_YET || pauseState) {
+      if (failReason != failReason_t::NOT_YET || status.pauseState) {
         lv_obj_scroll_by(lv_obj_get_child(screenMonitor, 1), 0, -50, LV_ANIM_ON);
       }
     }
@@ -460,9 +465,9 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
       data->key = LV_KEY_BACKSPACE;
     }
     else if (key == '*') {
-      if (testState) {
-        pauseState = !pauseState;
-        if (!pauseState) {
+      if (status.testState) {
+        status.pauseState = !status.pauseState;
+        if (!status.pauseState) {
           lv_obj_scroll_to(lv_obj_get_child(screenMonitor, 1), 0, 0, LV_ANIM_OFF);
         }
       }
@@ -471,7 +476,7 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
       esp_restart();
     }
     else if (key == 'G') {
-      testState = true;
+      status.testState = true;
       lv_disp_load_scr(screenMonitor);
     }
     else {

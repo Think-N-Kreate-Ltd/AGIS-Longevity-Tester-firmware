@@ -2,9 +2,6 @@
 #include <Wire.h>
 #include <Adafruit_INA219.h>
 #include <Tester_common.h>
-#include <esp_log.h>
-
-static const char* TAG = "INA219";
 
 #define ARRAYLENGTH 33
 
@@ -18,10 +15,10 @@ void ina219SetUp() {
   }
 
   if (!ina219.begin()) {
-    Serial.println("Failed to find INA219 chip");
+    ESP_LOGE("INA219", "Failed to find INA219 chip");
     while (1) { delay(10); }
   }
-  ESP_LOGD(TAG, "Init INA219 success");
+  ESP_LOGD("INA219", "Init INA219 success");
 }
 
 void getCurrent() {
@@ -30,6 +27,12 @@ void getCurrent() {
 
     // get the data from INA219
     current_mA = ina219.getCurrent_mA();
+    // mark as power failure if V<11
+    if (!powerFail && ina219.getBusVoltage_V()<11) {
+      powerFail = true;
+    } else if (powerFail && ina219.getBusVoltage_V()>11) {
+      powerFail = false;
+    }
 
     // calculate the average current in mA
     static float current[ARRAYLENGTH];  // save data with `ARRAYLENGTH` times 1 set
