@@ -279,28 +279,28 @@ void set_patarea(lv_obj_t * obj, uint8_t index) {
   if (index == 1) {
     set_grid_obj(obj, 0, 1, 0, 1, "Action\npat1");
     set_grid_obj(obj, 4, 2, 1, 1, "Upper LS touched");
-    sprintf(default_data, "%d", T_OUT_P1UP);
+    sprintf(default_data, "%d", setPattern[0].T_OUT_UP);
     set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
-    sprintf(default_data, "%d", T_OUT_P1DOWN);
+    sprintf(default_data, "%d", setPattern[0].T_OUT_DOWN);
     set_grid_obj_input(obj, 1, 1, 2, 1, default_data, T_OUT_DOWN_INDEX, index);
-    sprintf(default_data, "%d", PWM_P1UP*100/255);
+    sprintf(default_data, "%d", setPattern[0].PWM_UP*100/255);
     set_grid_obj_input(obj, 2, 1, 1, 1, default_data, PWM_UP_INDEX, index);
-    sprintf(default_data, "%d", abs(PWM_P1DOWN*100/255));
+    sprintf(default_data, "%d", abs(setPattern[0].PWM_DOWN*100/255));
     set_grid_obj_input(obj, 2, 1, 2, 1, default_data, PWM_DOWN_INDEX, index);
-    sprintf(default_data, "%d", (numTime_P1+1)/2);
+    sprintf(default_data, "%d", (setPattern[0].numTime+1)/2);
     set_grid_obj_input(obj, 3, 1, 1, 2, default_data, NUM_TIME_INDEX, index);
     lv_obj_align(obj, LV_ALIGN_TOP_MID, 0, lv_pct(28));
   } else if (index == 2) {
     set_grid_obj(obj, 0, 1, 0, 1, "Action\npat2");
-    sprintf(default_data, "%d", T_OUT_P2UP);
+    sprintf(default_data, "%d", setPattern[1].T_OUT_UP);
     set_grid_obj_input(obj, 1, 1, 1, 1, default_data, T_OUT_UP_INDEX, index);
-    sprintf(default_data, "%d", T_OUT_P2DOWN);
+    sprintf(default_data, "%d", setPattern[1].T_OUT_UP);
     set_grid_obj_input(obj, 1, 1, 2, 1, default_data, T_OUT_DOWN_INDEX, index);
-    sprintf(default_data, "%d", PWM_P2UP*100/255);
+    sprintf(default_data, "%d", setPattern[1].PWM_UP*100/255);
     set_grid_obj_input(obj, 2, 1, 1, 1, default_data, PWM_UP_INDEX, index);
-    sprintf(default_data, "%d", abs(PWM_P2DOWN*100/255));
+    sprintf(default_data, "%d", abs(setPattern[1].PWM_DOWN*100/255));
     set_grid_obj_input(obj, 2, 1, 2, 1, default_data, PWM_DOWN_INDEX, index);
-    sprintf(default_data, "%d", (numTime_P2+1)/2);
+    sprintf(default_data, "%d", (setPattern[1].numTime+1)/2);
     set_grid_obj_input(obj, 3, 1, 1, 2, default_data, NUM_TIME_INDEX, index);
     sprintf(default_data, "%ds", T_P2running);
     set_grid_obj_input(obj, 4, 2, 1, 1, default_data, T_RUN_UP_INDEX, index);
@@ -326,16 +326,16 @@ static void pat1_event_cb(lv_event_t * event) {
     uint16_t i = lv_obj_get_index(ta);
     Serial.println(i);
     if (i == T_OUT_UP_INDEX) {
-      T_OUT_P1UP = atoi(lv_textarea_get_text(ta));
+      setPattern[0].T_OUT_UP = atoi(lv_textarea_get_text(ta));
     } else if (i == T_OUT_DOWN_INDEX) {
-      T_OUT_P1DOWN = atoi(lv_textarea_get_text(ta));
+      setPattern[0].T_OUT_DOWN = atoi(lv_textarea_get_text(ta));
     } else if (i == PWM_UP_INDEX) {
-      PWM_P1UP = atoi(lv_textarea_get_text(ta)) * 255 / 100;
+      setPattern[0].PWM_UP = atoi(lv_textarea_get_text(ta)) * 255 / 100;
     } else if (i == PWM_DOWN_INDEX) {
-      PWM_P1DOWN = atoi(lv_textarea_get_text(ta)) * 255 / 100;
-      PWM_P1DOWN *= -1;
+      setPattern[0].PWM_DOWN = atoi(lv_textarea_get_text(ta)) * 255 / 100;
+      setPattern[0].PWM_DOWN *= -1;
     } else if (i == NUM_TIME_INDEX) {
-      numTime_P1 = atoi(lv_textarea_get_text(ta)) * 2 - 1;
+      setPattern[0].numTime = atoi(lv_textarea_get_text(ta)) * 2 - 1;
     }
     /*change the input color*/
     lv_obj_set_style_text_color(lv_obj_get_child(lv_obj_get_child(screenMain, 1), i), lv_palette_main(LV_PALETTE_GREEN), 0);
@@ -353,16 +353,16 @@ static void pat2_event_cb(lv_event_t * event) {
     /*get the input and store it*/
     uint16_t i = lv_obj_get_index(ta);
     if (i == T_OUT_UP_INDEX) {
-      T_OUT_P2UP = atoi(lv_textarea_get_text(ta));
+      setPattern[1].T_OUT_UP = atoi(lv_textarea_get_text(ta));
     } else if (i == T_OUT_DOWN_INDEX) {
-      T_OUT_P2DOWN = atoi(lv_textarea_get_text(ta));
+      setPattern[1].T_OUT_DOWN = atoi(lv_textarea_get_text(ta));
     } else if (i == PWM_UP_INDEX) {
-      PWM_P2UP = atoi(lv_textarea_get_text(ta)) * 255 / 100;
+      setPattern[1].PWM_UP = atoi(lv_textarea_get_text(ta)) * 255 / 100;
     } else if (i == PWM_DOWN_INDEX) {
-      PWM_P2DOWN = atoi(lv_textarea_get_text(ta)) * 255 / 100;
-      PWM_P2DOWN *= -1;
+      setPattern[1].PWM_DOWN = atoi(lv_textarea_get_text(ta)) * 255 / 100;
+      setPattern[1].PWM_DOWN *= -1;
     } else if (i == NUM_TIME_INDEX) {
-      numTime_P2 = atoi(lv_textarea_get_text(ta)) * 2 - 1;
+      setPattern[1].numTime = atoi(lv_textarea_get_text(ta)) * 2 - 1;
     } else if (i == T_RUN_UP_INDEX) {
       T_P2running = atoi(lv_textarea_get_text(ta));
     }

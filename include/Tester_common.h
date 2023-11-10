@@ -9,18 +9,15 @@ extern long TT;
 extern bool resumeAfterCutOff;
 // extern uint64_t resumeStartTime;
 
-extern int16_t PWM_P1UP;
-extern int16_t PWM_P1DOWN;
-extern int16_t PWM_P2UP;
-extern int16_t PWM_P2DOWN;
-
-extern uint8_t numTime_P1;
-extern uint8_t numTime_P2;
-
-extern uint8_t T_OUT_P1UP;
-extern uint8_t T_OUT_P1DOWN;
-extern uint8_t T_OUT_P2UP;
-extern uint8_t T_OUT_P2DOWN;
+struct MotorSetting {
+  int16_t PWM_UP;      // PWM of motor of move up, postitve=move up, negetive=move down
+  int16_t PWM_DOWN;    // PWM of motor of move down, postitve=move up, negetive=move down
+  uint8_t numTime;     // no. of time that run as a cycle, should multiply by 2 and subtract by 1
+  uint8_t T_OUT_UP;    // timeout of motor of move up
+  uint8_t T_OUT_DOWN;  // timeout of motor of move down
+};
+extern MotorSetting setPattern[];
+extern uint8_t sizeOfPattern;
 
 extern uint8_t T_P2running;
 

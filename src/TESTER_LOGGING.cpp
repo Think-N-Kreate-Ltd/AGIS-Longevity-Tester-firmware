@@ -314,16 +314,16 @@ bool readResumeData() {
         }
       }
       // save the motor data
-      PWM_P1UP = motorData[0];
-      PWM_P1DOWN = motorData[1];
-      PWM_P2UP = motorData[2];
-      PWM_P2DOWN = motorData[3];
-      numTime_P1 = motorData[4];
-      numTime_P2 = motorData[5];
-      T_OUT_P1UP = motorData[6];
-      T_OUT_P1DOWN = motorData[7];
-      T_OUT_P2UP = motorData[8];
-      T_OUT_P2DOWN = motorData[9];
+      setPattern[0].PWM_UP = motorData[0];
+      setPattern[0].PWM_DOWN = motorData[1];
+      setPattern[1].PWM_UP = motorData[2];
+      setPattern[1].PWM_DOWN = motorData[3];
+      setPattern[0].numTime = motorData[4];
+      setPattern[1].numTime = motorData[5];
+      setPattern[0].T_OUT_UP = motorData[6];
+      setPattern[0].T_OUT_DOWN = motorData[7];
+      setPattern[1].T_OUT_UP = motorData[8];
+      setPattern[1].T_OUT_DOWN = motorData[9];
       T_P2running = motorData[10];
 
       // check the data
@@ -361,10 +361,10 @@ void saveResumeData() {
   char data[160];  // the data that should log to file
   char data2[80];
   char data3[80];
-  sprintf(data, "1,%s,%d,%d,", filename, PWM_P1UP, PWM_P1DOWN);
-  sprintf(data2, "%d,%d,%d,%d,", PWM_P2UP, PWM_P2DOWN, numTime_P1, numTime_P2);
+  sprintf(data, "1,%s,%d,%d,", filename, setPattern[0].PWM_UP, setPattern[0].PWM_DOWN);
+  sprintf(data2, "%d,%d,%d,%d,", setPattern[1].PWM_UP, setPattern[1].PWM_DOWN, setPattern[0].numTime, setPattern[1].numTime);
   strcat(data, data2);
-  sprintf(data3, "%d,%d,%d,%d,%d,", T_OUT_P1UP, T_OUT_P1DOWN, T_OUT_P2UP, T_OUT_P2DOWN, T_P2running);
+  sprintf(data3, "%d,%d,%d,%d,%d,", setPattern[0].T_OUT_UP, setPattern[0].T_OUT_DOWN, setPattern[1].T_OUT_UP, setPattern[1].PWM_DOWN, T_P2running);
   strcat(data, data3);
 
   writeFile2(LittleFS, "/data1.txt", data);

@@ -31,18 +31,8 @@ uint64_t powerFailRecTime = 0;  // for record how long did power fail occur
 
 /*-----------------var for user inputs-----------------*/
 
-int16_t PWM_P1UP = 255;     // PWM of motor of pattern 1 move up, postitve=move up, negetive=move down
-int16_t PWM_P1DOWN = -153;  // PWM of motor of pattern 1 move down, postitve=move up, negetive=move down
-int16_t PWM_P2UP = 102;     // PWM of motor of pattern 2 move up, postitve=move up, negetive=move down
-int16_t PWM_P2DOWN = -102;  // PWM of motor of pattern 2 move down, postitve=move up, negetive=move down
-
-uint8_t numTime_P1 = 3;     // no. of time that pattern 1 run as a cycle, should multiply by 2 and subtract by 1
-uint8_t numTime_P2 = 7;     // no. of time that pattern 2 run as a cycle, should multiply by 2 and subtract by 1
-
-uint8_t T_OUT_P1UP = 10;    // timeout of motor of pattern 1 move up
-uint8_t T_OUT_P1DOWN = 10;  // timeout of motor of pattern 1 move down
-uint8_t T_OUT_P2UP = 2;     // timeout of motor of pattern 2 move up
-uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
+MotorSetting setPattern[] = {{255, -153, 3, 10, 10}, {102, -102, 7, 2, 2}};
+uint8_t sizeOfPattern = 2;  // size of the array of struct, equal to total number of pattern
 
 uint8_t T_P2running = 1;    // running time of motor on up in pattern 2
 
@@ -217,21 +207,21 @@ void pauseAll(uint8_t i) {
       // should reach timeout. i.e., not to finish this loop before touch LS -> to bypass timeout check
       if (status.motorState) {
         if (status.cycleState == 1) {
-          motorOn(PWM_P1UP);
+          motorOn(setPattern[0].PWM_UP);
           while (limitSwitch_Up.getStateRaw() == 1) {
             vTaskDelay(20);
           }
         } else if (status.cycleState == 2) {
-          motorOn(PWM_P2UP);
+          motorOn(setPattern[1].PWM_UP);
           uint16_t timeUsed = i*20;
           vTaskDelay(T_P2running*1000 + 50 - timeUsed); // +50 for preventing error
         }
         
       } else {
         if (status.cycleState == 1) {
-          motorOn(PWM_P1DOWN);
+          motorOn(setPattern[0].PWM_DOWN);
         } else if (status.cycleState == 2) {
-          motorOn(PWM_P2DOWN);
+          motorOn(setPattern[1].PWM_DOWN);
         }
         while (limitSwitch_Down.getStateRaw() == 1) {
           vTaskDelay(20);
@@ -279,20 +269,20 @@ void motorOn(int PWM) {
 void motorP1(uint8_t time) {
   static uint32_t recTime;
   if (status.motorState) {
-    motorOn(PWM_P1UP);
+    motorOn(setPattern[0].PWM_UP);
     recTime = millis();
     do {
       vTaskDelay(20);
-      timeoutCheck(T_OUT_P1UP, recTime-powerFailRecTime);
+      timeoutCheck(setPattern[0].T_OUT_UP, recTime-powerFailRecTime);
       pauseAll();
     } while (limitSwitch_Up.getStateRaw() == 1);
     status.motorState = false;  // motor move down
   } else {
-    motorOn(PWM_P1DOWN);
+    motorOn(setPattern[0].PWM_DOWN);
     recTime = millis();
     do {
       vTaskDelay(20);
-      timeoutCheck(T_OUT_P1DOWN, recTime-powerFailRecTime);
+      timeoutCheck(setPattern[0].T_OUT_DOWN, recTime-powerFailRecTime);
       pauseAll();
     } while (limitSwitch_Down.getStateRaw() == 1);
     status.motorState = true;
@@ -313,14 +303,14 @@ void motorP1(uint8_t time) {
 void motorP2(uint8_t time) {
   static uint32_t recTime;
   if (status.motorState) {
-    motorOn(PWM_P2UP);
+    motorOn(setPattern[1].PWM_UP);
     recTime = millis();
     vTaskDelay(20);
     uint32_t count = T_P2running*50;
       for (uint8_t i=0; i<count; ++i) { // total delay for 20*50=1000ms
         if ((limitSwitch_Up.getStateRaw() == 1) && (millis()-recTime<=(T_P2running*1000))) {
           vTaskDelay(20);
-          timeoutCheck(T_OUT_P2UP, recTime-powerFailRecTime);
+          timeoutCheck(setPattern[1].T_OUT_UP, recTime-powerFailRecTime);
           pauseAll(i);
         } else {
           i=count; // if touch limit SW, directory go to next state
@@ -328,11 +318,11 @@ void motorP2(uint8_t time) {
       }
     status.motorState = false;  // motor move down
   } else {
-    motorOn(PWM_P2DOWN);
+    motorOn(setPattern[1].PWM_DOWN);
     recTime = millis();
     do {
       vTaskDelay(20);
-      timeoutCheck(T_OUT_P2DOWN, recTime-powerFailRecTime);
+      timeoutCheck(setPattern[1].T_OUT_DOWN, recTime-powerFailRecTime);
       pauseAll();
     } while (limitSwitch_Down.getStateRaw() == 1);
     status.motorState = true;
@@ -374,11 +364,11 @@ void motorCycle(void * arg) {
     // status.testState = true;
     uint64_t recTime = millis();
     if (status.cycleState == 1) {
-      motorP1(numTime_P1 - status.passedNum);
+      motorP1(setPattern[0].numTime - status.passedNum);
       status.cycleState++;
-      motorP2(numTime_P2);
+      motorP2(setPattern[1].numTime);
     } else {
-      motorP2(numTime_P2 - status.passedNum);
+      motorP2(setPattern[1].numTime - status.passedNum);
     }
     logData(millis()-recTime);
   }
@@ -388,10 +378,10 @@ void motorCycle(void * arg) {
     status.passedNum = 0;
     static uint64_t recTime = millis();
     status.cycleState = 1;
-    motorP1(numTime_P1);
+    motorP1(setPattern[0].numTime);
     status.cycleState++;
     status.passedNum = 0;
-    motorP2(numTime_P2);
+    motorP2(setPattern[1].numTime);
     logData(millis()-recTime);
     recTime = millis();
   }
