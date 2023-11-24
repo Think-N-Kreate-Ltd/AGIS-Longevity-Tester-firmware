@@ -17,6 +17,7 @@
 void display_init();
 void input_screen();
 void monitor_screen();
+void setDisplaySleep();
 
 /*----------function prototype only use in AGIS_Display.h (private)----------*/
 

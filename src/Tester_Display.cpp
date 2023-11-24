@@ -490,3 +490,25 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
     data->key = 0x00; /*reset key value and do nothing*/
   }
 }
+
+/**
+ * Set the Display Sleep object
+ * while enter sleep mode, it will goes to white screen
+ * Thus, `tft.fillScreen(TFT_BLACK)` cannot blacken the screen
+ * write LED pin to LOW is a method but now is connecting to 3V3
+ */
+void setDisplaySleep() {
+  // digitalWrite(TFT_LED, LOW); // to blacken the light
+  digitalWrite(TFT_CS, LOW);
+  digitalWrite(TFT_DC, LOW);
+  SPI.transfer(0x10);         // enter sleep mode
+  digitalWrite(TFT_CS, HIGH);
+}
+
+/* awake TFT display, not in used*/
+void setDisplayAwake() {
+  digitalWrite(TFT_CS, LOW);
+  digitalWrite(TFT_DC, LOW);
+  SPI.transfer(0x11);         // exit sleep mode
+  digitalWrite(TFT_CS, HIGH); // enable SPI communication
+}
