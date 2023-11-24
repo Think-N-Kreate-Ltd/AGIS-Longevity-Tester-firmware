@@ -362,6 +362,7 @@ void motorCycle(void * arg) {
     }
     lastFileInit();
     // status.testState = true;
+    status.pauseState = false;
     uint64_t recTime = millis();
     if (status.cycleState == 1) {
       motorP1(setPattern[0].numTime - status.passedNum);
@@ -442,18 +443,22 @@ void loggingData(void * parameter) {
       
       // after create file, wait for finish
       // data logging will be done when in needed
-      while (status.testState)  {
+      while (status.testState) {
         // logData();
         if (powerFail) {
           Serial.println("power fail occur");
 
+          // pause it to stop the motor run time
+          // pause before log status as we want to start from pause state next time
+          // in order to stop the motor run time before motor move
+          status.pauseState = true;
+
           // log all data before memory lost
           quickLog();
-          storeLogData("\0", true); // write the buffer to file. Warning is not important, or add a NULL char * to remove it
-          
-          // pause it to stop the motor run time
-          status.pauseState = true;
-          
+
+          // write the buffer to file. Warning is not important, or add a NULL char * to remove it
+          storeLogData("\0", true);
+
           // prevent from calling it second time
           // pauseAll();  // should not call pauseAll, but should work similar
           if (status.pauseState) {
@@ -468,6 +473,7 @@ void loggingData(void * parameter) {
                 // when power connect back, resume everything
                 status.pauseState = false;
                 logPauseData(powerFailRecTime/1000);
+                ESP.restart();  // re-init all (in fact, only TFT need to be re-init-ed)
               }
             }
           }
