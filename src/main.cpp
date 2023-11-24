@@ -456,8 +456,11 @@ void loggingData(void * parameter) {
           // log all data before memory lost
           quickLog();
 
-          // write the buffer to file. Warning is not important, or add a NULL char * to remove it
-          storeLogData("\0", true);
+          // write the buffer to file
+          char nullChar[1] = {'\0'};
+          storeLogData(nullChar, true);
+
+          setDisplaySleep();
 
           // prevent from calling it second time
           // pauseAll();  // should not call pauseAll, but should work similar
