@@ -28,9 +28,9 @@ void getCurrent() {
     // get the data from INA219
     current_mA = ina219.getCurrent_mA();
     // mark as power failure if V<11
-    if (!powerFail && ina219.getBusVoltage_V()<11) {
+    if (!powerFail && ina219.getBusVoltage_V()<10) {
       powerFail = true;
-    } else if (powerFail && ina219.getBusVoltage_V()>11) {
+    } else if (powerFail && ina219.getBusVoltage_V()>10) {
       powerFail = false;
     }
 

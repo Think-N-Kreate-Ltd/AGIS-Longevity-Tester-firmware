@@ -447,12 +447,12 @@ void loggingData(void * parameter) {
         if (powerFail) {
           Serial.println("power fail occur");
 
-          // pause it to stop the motor run time
-          status.pauseState = true;
-
           // log all data before memory lost
           quickLog();
           storeLogData("\0", true); // write the buffer to file. Warning is not important, or add a NULL char * to remove it
+          
+          // pause it to stop the motor run time
+          status.pauseState = true;
           
           // prevent from calling it second time
           // pauseAll();  // should not call pauseAll, but should work similar
