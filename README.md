@@ -1,12 +1,6 @@
 # AGIS-Longevity-Tester-firmware
 The firmware for AGIS Longevity Tester
 
-# important Notice
-+ The LVGL library have change recently, there is a bug on using `lv_table_set_cell_value_fmt` function
-+ This function allocate not enough memory for user input string. As a result, it is normal that the last character disappear in each table box using fmt
-+ If want to fix it, in LVGL -> lv_table.c file -> Line 194 -> change `len` to `len + 1`
-+ I saw somebody raise this problem already, I think it will be solved within serval days, so I am not going to change anything <- plz delete this notice after this bug is fixed
-
 ## Description
 - for cases that failure happened but cannot do homing (stopped or still testing):
     1. double press `*` -> if it can do homing, then it should be program problem
