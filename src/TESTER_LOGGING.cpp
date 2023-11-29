@@ -127,6 +127,14 @@ void newFileInit() {
   strcat(firstLine, "\nTime:, State, Cycle Time, Current:\n");
 
   writeFile2(LittleFS, filename, firstLine);
+  ESP_LOGI("Logging", "new file init");
+}
+
+void lastFileInit() {
+  char firstLine[100];
+  sprintf(firstLine, "%s: cut off power and resume\n", dateTime);
+  // appendFile(LittleFS, filename, firstLine);
+  storeLogData(firstLine);
 }
 
 // do whenever the limited SW is touched
@@ -134,24 +142,24 @@ void newFileInit() {
 void logData(uint64_t cycleTtime) {
   char data[120];  // the data that should log to file
   // cal first to reduce the length
-  uint16_t hour = motorRunTime/3600;
-  uint8_t min = motorRunTime%3600/60;
-  uint8_t sec = motorRunTime%60;
+  uint16_t hour = status.motorRunTime/3600;
+  uint8_t min = status.motorRunTime%3600/60;
+  uint8_t sec = status.motorRunTime%60;
   char MS[5];
-  if (motorState) {
+  if (status.motorState) {
     strcpy(MS, "down");  // reversed as we log data after state changed
   } else {
     strcpy(MS, "up");    // reversed as we log data after state changed
   }
   if (cycleTtime == 0) {
-    sprintf(data, "%03d:%02d:%02d, P%d %s, N/A, %5.2f\n", hour, min, sec, cycleState, MS, avgCurrent_mA);
+    sprintf(data, "%03d:%02d:%02d, P%d %s, N/A, %5.2f\n", hour, min, sec, status.cycleState, MS, avgCurrent_mA);
   } else {
     uint8_t CT1 = cycleTtime/1000;
     uint16_t CT2 = cycleTtime%1000;
-    Serial.println(numCycle);
-    sprintf(data, "%03d:%02d:%02d, P%d %s, %02d.%03d", hour, min, sec, cycleState, MS, CT1, CT2);
+    Serial.println(status.numCycle);
+    sprintf(data, "%03d:%02d:%02d, P%d %s, %02d.%03d", hour, min, sec, status.cycleState, MS, CT1, CT2);
     char data2[127];  // too long, seperate it
-    sprintf(data2, "(%d), %5.2f\n", numCycle, avgCurrent_mA);
+    sprintf(data2, "(%d), %5.2f\n", status.numCycle, avgCurrent_mA);
     strcat(data, data2);
   }
 
@@ -161,11 +169,11 @@ void logData(uint64_t cycleTtime) {
 // log the pause time 
 void logPauseData(uint64_t time) {
   char data[80];  // the data that should log to file
-  if (pauseState) {
+  if (status.pauseState) {
     // cal first to reduce the length
-    uint16_t hour = motorRunTime/3600;
-    uint8_t min = motorRunTime%3600/60;
-    uint8_t sec = motorRunTime%60;
+    uint16_t hour = status.motorRunTime/3600;
+    uint8_t min = status.motorRunTime%3600/60;
+    uint8_t sec = status.motorRunTime%60;
     sprintf(data, "%03d:%02d:%02d, paused\n", hour, min, sec);
   } else {
     // cal first to reduce the length
@@ -175,6 +183,17 @@ void logPauseData(uint64_t time) {
     sprintf(data, "N/A, resume, pause time:%03d:%02d:%02d\n", hour, min, sec);
   }
   storeLogData(data);
+}
+
+void quickLog() {
+  File file = LittleFS.open("/data2.txt", "w");
+  if (!file) {
+    Serial.println("fail to open file");
+    return;
+  } else {
+    file.write((const uint8_t*)&status, sizeof(status));
+  }
+  file.close();
 }
 
 // log the last line, which tells the time and finish
@@ -191,7 +210,7 @@ void endLogging() {
     strcat(data, "Key `*` pressed");
   }
   storeLogData(data, true);
-  Serial.println("data logging finished");
+  ESP_LOGI("Logging", "data logging finished");
 }
 
 void notFound(AsyncWebServerRequest *request) {
@@ -220,11 +239,12 @@ void storeLogData(char * str, bool lastData) {
       data[j] = 0;
     }
     length = 0;
-    strcpy(data, "");
+    strcpy(data, "\0");
   } else if (lastData) {
     data[length] = 0;
     appendFile(LittleFS, filename, data);
     Serial.printf("length of data is %d\n", length);
+    length = 0;
   }
 }
 
@@ -237,6 +257,122 @@ void downLogFile() {
   server.onNotFound(notFound); // if 404 not found, go to 404 not found
   AsyncElegantOTA.begin(&server); // for OTA update
   server.begin();
+}
+
+// read the file for getting info of the last test
+// `,` is used to trigger the reading and storing
+// return true if need to resume, false if restart <- for homing
+bool readResumeData() {
+  bool resume = true; // var for return
+  Serial.printf("Reading file: %s\r\n", "/data1.txt");
+
+  File file = LittleFS.open("/data1.txt");
+  if(!file || file.isDirectory()){
+    Serial.println("- failed to open file for reading");
+    resume = false;
+  }
+
+  if (!file.available()) {
+    resume = false;
+    ESP_LOGW("Resume reading", "fail to open file, or empty file, restart test");
+  } else {
+    char c = file.read(); // read the last state
+    if (c == '0') { 
+      resume = false;
+      ESP_LOGI("Resume reading", "stopped last time, restart test");
+    } else {  
+      readFile(LittleFS, "/data1.txt");
+      ESP_LOGI("Resume reading", "paused last time, resume test, wait a while");
+      c = file.read();  // there should be a comma then, pass it
+
+      // get the file name
+      for (uint8_t j=0; j<13; ++j) {
+        filename[j] = file.read();
+      }
+      Serial.println(filename);
+      c = file.read();  // there should be a comma then, pass it
+
+      // get user input data done in last time
+      int16_t motorData[11]; // array to store all motor data
+      char MD[5]; // string to store the read-ed motor data
+      uint8_t count = 0;
+      uint8_t i = 0;
+      while (file.available() && (count<11)) {
+        c = file.read();
+        if (c == 44) {  // read the comma
+          *(motorData + count) = atoi(MD);
+          count++;
+          i = 0;
+          Serial.printf("%s, ", MD);
+          // reset DF to NULL to store the next reading
+          for (uint8_t j=0; j<5; ++j) {
+            MD[j] = 0;
+          }
+        } else {  
+          MD[i] = c;
+          ++i;
+        }
+      }
+      // save the motor data
+      setPattern[0].PWM_UP = motorData[0];
+      setPattern[0].PWM_DOWN = motorData[1];
+      setPattern[1].PWM_UP = motorData[2];
+      setPattern[1].PWM_DOWN = motorData[3];
+      setPattern[0].numTime = motorData[4];
+      setPattern[1].numTime = motorData[5];
+      setPattern[0].T_OUT_UP = motorData[6];
+      setPattern[0].T_OUT_DOWN = motorData[7];
+      setPattern[1].T_OUT_UP = motorData[8];
+      setPattern[1].T_OUT_DOWN = motorData[9];
+      T_P2running = motorData[10];
+
+      // check the data
+      for (uint8_t j=0; j<11; ++j) {
+        Serial.printf("\nmotorData[%d] = %d", j, motorData[j]);
+      }
+
+      // also get the data of motor status
+      readResumeData2();
+    }
+  }
+
+  file.close();
+  return resume;
+}
+
+// read the file and decode to get the last status of motor
+void readResumeData2() {
+  Serial.println("Reading file: /data2.txt");
+
+  File file = LittleFS.open("/data2.txt", "r");
+  if (!file) {
+    Serial.println("fail to open file");
+    return;
+  } else {
+    file.read((uint8_t*)&status, sizeof(status));
+    // resumeStartTime = status.motorRunTime;  // udpate the motor run time
+    Serial.printf("readings are %d, %d, %d, %d, %d, %d, %d\n", status.motorState, status.cycleState, 
+                  status.testState, status.pauseState, status.motorRunTime, status.numCycle, status.testState);
+  }
+  file.close();
+}
+
+void saveResumeData() {
+  char data[160];  // the data that should log to file
+  char data2[80];
+  char data3[80];
+  sprintf(data, "1,%s,%d,%d,", filename, setPattern[0].PWM_UP, setPattern[0].PWM_DOWN);
+  sprintf(data2, "%d,%d,%d,%d,", setPattern[1].PWM_UP, setPattern[1].PWM_DOWN, setPattern[0].numTime, setPattern[1].numTime);
+  strcat(data, data2);
+  sprintf(data3, "%d,%d,%d,%d,%d,", setPattern[0].T_OUT_UP, setPattern[0].T_OUT_DOWN, setPattern[1].T_OUT_UP, setPattern[1].PWM_DOWN, T_P2running);
+  strcat(data, data3);
+
+  writeFile2(LittleFS, "/data1.txt", data);
+  // appendFile(LittleFS, "/data1.txt", data2);
+  // appendFile(LittleFS, "/data1.txt", data3);
+  Serial.println(data);
+  // Serial.println(data2);
+  // Serial.println(data3);
 }
 
 // to delete all files in a dir (not include dir)

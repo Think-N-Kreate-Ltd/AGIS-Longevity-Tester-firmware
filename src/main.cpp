@@ -22,24 +22,17 @@ ezButton limitSwitch_Down(38); // create ezButton object that attach to pin 38
 
 /*----------------var for control motor----------------*/
 
-volatile bool motorHoming = true;   // will directly go to homing when true
-uint64_t recordTime;       // for record the time of motor, mainly for testing
-uint64_t startTime = millis();      // for record the starting time of the test 
+volatile bool motorHoming = false;  // will directly go to homing when true
+uint64_t recordTime;            // for record the time of motor, mainly for testing
+// uint64_t startTime = millis();  // for record the starting time of the test 
+bool resumeAfterCutOff = false; // for finding if last time stop by cut off power, also change to false after get all resume data
+// uint64_t resumeStartTime = 0;   // for storing the time of motor run time for last test (cut off -ed)
+uint64_t powerFailRecTime = 0;  // for record how long did power fail occur
 
 /*-----------------var for user inputs-----------------*/
 
-int16_t PWM_P1UP = 255;     // PWM of motor of pattern 1 move up, postitve=move up, negetive=move down
-int16_t PWM_P1DOWN = -153;  // PWM of motor of pattern 1 move down, postitve=move up, negetive=move down
-int16_t PWM_P2UP = 102;     // PWM of motor of pattern 2 move up, postitve=move up, negetive=move down
-int16_t PWM_P2DOWN = -102;  // PWM of motor of pattern 2 move down, postitve=move up, negetive=move down
-
-uint8_t numTime_P1 = 3;     // no. of time that pattern 1 run as a cycle, should multiply by 2 and subtract by 1
-uint8_t numTime_P2 = 7;     // no. of time that pattern 2 run as a cycle, should multiply by 2 and subtract by 1
-
-uint8_t T_OUT_P1UP = 10;    // timeout of motor of pattern 1 move up
-uint8_t T_OUT_P1DOWN = 10;  // timeout of motor of pattern 1 move down
-uint8_t T_OUT_P2UP = 2;     // timeout of motor of pattern 2 move up
-uint8_t T_OUT_P2DOWN = 2;   // timeout of motor of pattern 2 move down
+MotorSetting setPattern[] = {{255, -153, 3, 10, 10}, {102, -102, 7, 2, 2}};
+uint8_t sizeOfPattern = 2;  // size of the array of struct, equal to total number of pattern
 
 uint8_t T_P2running = 1;    // running time of motor on up in pattern 2
 
@@ -52,15 +45,11 @@ bool downloadFile = false;  // when user click btn to down file, it will become 
 
 float current_mA;       // the current at a specific time, unit=mA
 float avgCurrent_mA;    // the average current in pass second, unit=mA
+bool powerFail = false; // the condition of power supply, true when disconnected
 
 /*-------------------var for display-------------------*/
 
-bool motorState = true; // for checking the motor is moving Up or Down, ture=Up
-uint8_t cycleState = 0; // for checking the motor is moving which cycle, 0 for stop
-bool testState = false; // true after user finish input and start, until homing finish
-bool pauseState = false;// will pause the test will it goes to true
-uint64_t motorRunTime;  // the total time that the motor run, not including the pause time
-uint64_t numCycle = 0;  // for recording the number of cycle
+MotorStatus status = {true, 0, false, false, 0, 0};
 failReason_t failReason = failReason_t::NOT_YET;
 
 /*------------------function protypes------------------*/
@@ -87,14 +76,29 @@ void tftDisplay(void * arg);
 hw_timer_t *Timer0_cfg = NULL; // create a pointer for timer0
 
 void IRAM_ATTR timeCount() {
-  if (!pauseState && testState) {
-    motorRunTime = (millis() - startTime)/1000;
+  if (!status.pauseState && status.testState) {
+    static uint8_t count = 0;
+    if (count == 1) {
+      status.motorRunTime++;
+      count = 0;
+    } else {
+      count++;
+    }
   }
 }
 
 void setup() {
   Serial.begin(115200);
   pinMode(TFT_CS, OUTPUT);
+
+  // set up LittleFS
+  // place here because FS must be mount first
+  if (!LittleFS.begin(true)) {
+    ESP_LOGE("FS", "LittleFS Mount Failed");
+    return;
+  } else {
+    listDir(LittleFS, "/", 2);
+  }
 
   // setup for timer0
   Timer0_cfg = timerBegin(0, 8000, true);   // prescaler = 8000
@@ -152,8 +156,10 @@ void setup() {
 
 void loop() {
   // if (print) {
-  //   Serial.printf("average current: %f\n", avgCurrent_mA);
-  //   Serial.printf("start time: %s\n", dateTime);
+  //   // Serial.printf("average current: %f\n", avgCurrent_mA);
+  //   Serial.printf("resumeAfterCutOff: %d, ", resumeAfterCutOff);
+  //   Serial.printf("testState: %d, ", status.testState);
+  //   Serial.printf("date time : %s\n", dateTime);
   //   print = false;
   // }
 }
@@ -161,17 +167,21 @@ void loop() {
 /*------------------function protypes------------------*/
 
 void stopTest() {
+  // write to file to tell that next time should not resume
+  writeFile(LittleFS, "/data1.txt", "0");
+  writeFile(LittleFS, "/data2.txt", "0");
+
+  // do homing
   motorHoming = true;
   while (motorHoming) {
     vTaskDelay(200);
   }
-  Serial.println("homing completed, all stopped");
+  ESP_LOGI("Homing", "homing completed, all stopped");
 
   // all finish after homing
-  // TODO: think how to stop it, now cannot stop for current problem
   recordTime = millis();
-  testState = false;
-  cycleState = 0;
+  status.testState = false;
+  status.cycleState = 0;
   downloadFile = true;  // TODO: remove it after we can use keypad input
   Serial.println(recordTime);
   vTaskDelay(UINT_MAX); 
@@ -182,36 +192,36 @@ void stopTest() {
 // do not want to use sleep as it is harmful to the program
 // can try to use delay() in main loop but not recommened
 void pauseAll(uint8_t i) {
-  if (pauseState) {
+  if (status.pauseState) {
     uint64_t recTime = millis();
     motorOn(0);
     logPauseData();
-    while (pauseState) {
+    while (status.pauseState) {
       vTaskDelay(200);
     }
 
     if ((millis()-recTime) >= 1000) { // not double press, resume the test
       // when resume, record the time again
-      startTime += (millis() - recTime);
+      // startTime += (millis() - recTime);
       
       // should reach timeout. i.e., not to finish this loop before touch LS -> to bypass timeout check
-      if (motorState) {
-        if (cycleState == 1) {
-          motorOn(PWM_P1UP);
+      if (status.motorState) {
+        if (status.cycleState == 1) {
+          motorOn(setPattern[0].PWM_UP);
           while (limitSwitch_Up.getStateRaw() == 1) {
             vTaskDelay(20);
           }
-        } else if (cycleState == 2) {
-          motorOn(PWM_P2UP);
+        } else if (status.cycleState == 2) {
+          motorOn(setPattern[1].PWM_UP);
           uint16_t timeUsed = i*20;
           vTaskDelay(T_P2running*1000 + 50 - timeUsed); // +50 for preventing error
         }
         
       } else {
-        if (cycleState == 1) {
-          motorOn(PWM_P1DOWN);
-        } else if (cycleState == 2) {
-          motorOn(PWM_P2DOWN);
+        if (status.cycleState == 1) {
+          motorOn(setPattern[0].PWM_DOWN);
+        } else if (status.cycleState == 2) {
+          motorOn(setPattern[1].PWM_DOWN);
         }
         while (limitSwitch_Down.getStateRaw() == 1) {
           vTaskDelay(20);
@@ -258,30 +268,32 @@ void motorOn(int PWM) {
 // time is the number of time that motor On/Down should run, default is 3
 void motorP1(uint8_t time) {
   static uint32_t recTime;
-  if (motorState) {
-    motorOn(PWM_P1UP);
+  if (status.motorState) {
+    motorOn(setPattern[0].PWM_UP);
     recTime = millis();
     do {
       vTaskDelay(20);
-      timeoutCheck(T_OUT_P1UP, recTime);
+      timeoutCheck(setPattern[0].T_OUT_UP, recTime-powerFailRecTime);
       pauseAll();
     } while (limitSwitch_Up.getStateRaw() == 1);
-    motorState = false;  // motor move down
+    status.motorState = false;  // motor move down
   } else {
-    motorOn(PWM_P1DOWN);
+    motorOn(setPattern[0].PWM_DOWN);
     recTime = millis();
     do {
       vTaskDelay(20);
-      timeoutCheck(T_OUT_P1DOWN, recTime);
+      timeoutCheck(setPattern[0].T_OUT_DOWN, recTime-powerFailRecTime);
       pauseAll();
     } while (limitSwitch_Down.getStateRaw() == 1);
-    motorState = true;
+    status.motorState = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
   }
   logData(0);
+  powerFailRecTime = 0;
 
   if (time >= 1) { // run the next time
     Serial.printf("pattern 1 finish half, %d times remains\n", time);
+    status.passedNum++;
     motorP1(time-1);
   }
 }
@@ -290,36 +302,38 @@ void motorP1(uint8_t time) {
 // time is the number of time that motor On/Down should run, default is 7
 void motorP2(uint8_t time) {
   static uint32_t recTime;
-  if (motorState) {
-    motorOn(PWM_P2UP);
+  if (status.motorState) {
+    motorOn(setPattern[1].PWM_UP);
     recTime = millis();
     vTaskDelay(20);
     uint32_t count = T_P2running*50;
       for (uint8_t i=0; i<count; ++i) { // total delay for 20*50=1000ms
         if ((limitSwitch_Up.getStateRaw() == 1) && (millis()-recTime<=(T_P2running*1000))) {
           vTaskDelay(20);
-          timeoutCheck(T_OUT_P2UP, recTime);
+          timeoutCheck(setPattern[1].T_OUT_UP, recTime-powerFailRecTime);
           pauseAll(i);
         } else {
           i=count; // if touch limit SW, directory go to next state
         }
       }
-    motorState = false;  // motor move down
+    status.motorState = false;  // motor move down
   } else {
-    motorOn(PWM_P2DOWN);
+    motorOn(setPattern[1].PWM_DOWN);
     recTime = millis();
     do {
       vTaskDelay(20);
-      timeoutCheck(T_OUT_P2DOWN, recTime);
+      timeoutCheck(setPattern[1].T_OUT_DOWN, recTime-powerFailRecTime);
       pauseAll();
     } while (limitSwitch_Down.getStateRaw() == 1);
-    motorState = true;
+    status.motorState = true;
     motorOn(0); // for safety, write the motor to stop, will overwrite soon
   }
   logData(0);
+  powerFailRecTime = 0;
 
   if (time >= 1) { // run the next time
     Serial.printf("pattern 2 finish half, %d times remains\n", time);
+    status.passedNum++;
     motorP2(time-1);
   }
 }
@@ -327,25 +341,47 @@ void motorP2(uint8_t time) {
 /*--------------------task functions--------------------*/
 
 void motorCycle(void * arg) {
-  while (motorHoming) {
-    vTaskDelay(20);
-  }
-  Serial.println("homing completed");
+  // check if test resume
+  resumeAfterCutOff = readResumeData();
+  if (!resumeAfterCutOff) {
+    motorHoming = true;
+    while (motorHoming) {
+      vTaskDelay(20);
+    }
+    ESP_LOGI("Homing", "homing completed");
 
-  while (!testState) {  // wait until user start the test (and homing completed)
-    vTaskDelay(500);
+    while (!status.testState) {  // wait until user start the test (and homing completed)
+      vTaskDelay(500);
+    }
+    Serial.println("Start test");
+    vTaskDelay(1000); // delay for 1 sec for logging init
+    // startTime = millis();
+  } else {  // resume the test
+    while (!strchr(dateTime, ':')) {  // wait until get time
+      vTaskDelay(100);
+    }
+    lastFileInit();
+    // status.testState = true;
+    uint64_t recTime = millis();
+    if (status.cycleState == 1) {
+      motorP1(setPattern[0].numTime - status.passedNum);
+      status.cycleState++;
+      motorP2(setPattern[1].numTime);
+    } else {
+      motorP2(setPattern[1].numTime - status.passedNum);
+    }
+    logData(millis()-recTime);
   }
-  Serial.println("Start test");
-  vTaskDelay(1000); // delay for 1 sec for logging init
-  startTime = millis();
 
   for (;;) {
-    numCycle++;
+    status.numCycle++;
+    status.passedNum = 0;
     static uint64_t recTime = millis();
-    cycleState = 1;
-    motorP1(numTime_P1);
-    cycleState++;
-    motorP2(numTime_P2);
+    status.cycleState = 1;
+    motorP1(setPattern[0].numTime);
+    status.cycleState++;
+    status.passedNum = 0;
+    motorP2(setPattern[1].numTime);
     logData(millis()-recTime);
     recTime = millis();
   }
@@ -353,17 +389,17 @@ void motorCycle(void * arg) {
 
 void homingRollerClamp(void * arg) {
   for(;;) {
+    while (!motorHoming) {
+      vTaskDelay(200);
+      print = true;
+    }
+
     if (limitSwitch_Down.getStateRaw() == 0) {  // touched
       motorHoming = false;
       motorOn(0);
     } else {
       // motor move down
       motorOn(-255);
-    }
-
-    while (!motorHoming) {
-      vTaskDelay(200);
-      print = true;
     }
 
     vTaskDelay(50);
@@ -380,29 +416,65 @@ void getI2CData(void * arg) {
         failReason = failReason_t::CURRENT_EXCEED;
       }
       stopTest();
-      Serial.println(avgCurrent_mA);
+      ESP_LOGI("Stop test", "fail reason: current:%5.2f", avgCurrent_mA);
     }
   }
 }
 
 void loggingData(void * parameter) {
-  // set up
-  if (!LittleFS.begin(true)) {
-    Serial.println("LittleFS Mount Failed");
-    return;
-  }
   static bool finishLogging = false;
 
   for (;;) {
-    if (testState) {
-      newFileInit();  // create new file and header
-      Serial.println("Logging initialized");
+    if (status.testState) {
+      if(!resumeAfterCutOff) {
+        newFileInit();  // create new file and header
+        ESP_LOGI("Logging", "Logging initialized");
+
+        // save the user input and test info
+        saveResumeData();
+      }
+
+      // to prevent from checking power before connecting power
+      // i.e. for testing currently: connect to microUSB -> cut off power -> reboot ESP -> turn on power
+      // it should be useless after we can do from hardware
+      // but better keep this 5s delay as it have no negative impact but may prevent unexpected condition
+      vTaskDelay(5000);
       
       // after create file, wait for finish
       // data logging will be done when in needed
-      while (testState)  {
-        vTaskDelay(500);
+      while (status.testState)  {
         // logData();
+        if (powerFail) {
+          Serial.println("power fail occur");
+
+          // pause it to stop the motor run time
+          status.pauseState = true;
+
+          // log all data before memory lost
+          quickLog();
+          storeLogData("\0", true); // write the buffer to file. Warning is not important, or add a NULL char * to remove it
+          
+          // prevent from calling it second time
+          // pauseAll();  // should not call pauseAll, but should work similar
+          if (status.pauseState) {
+            powerFailRecTime = 0;
+            // motorOn(0);  // s.t. we can not to output to motor to move it if resume soon
+            logPauseData();
+            while (status.pauseState) {
+              vTaskDelay(50);
+              powerFailRecTime += 50;
+              Serial.println(powerFailRecTime);
+              if (!powerFail) {
+                // when power connect back, resume everything
+                status.pauseState = false;
+                logPauseData(powerFailRecTime/1000);
+              }
+            }
+          }
+          // vTaskDelay(20000);  // assume the back up power will used up within 20s
+        }
+
+        vTaskDelay(500);  // put this after checking power to prevent triggered by stopping
       }
 
       finishLogging = true;
@@ -415,7 +487,7 @@ void loggingData(void * parameter) {
         vTaskDelay(200);
       }
       endLogging();
-      testState = false;
+      status.testState = false;
       finishLogging = false;
     }
 
@@ -433,11 +505,11 @@ void loggingData(void * parameter) {
       Serial.print("you can download the file now, IP Address: ");
       Serial.println(WiFi.localIP().toString());
 
-      while (!testState) {  // the user should download before next test start
+      while (!status.testState) {  // the user should download before next test start
         vTaskDelay(500);
       }
       //disconnect WiFi
-      Serial.println("WiFi disconnected");
+      ESP_LOGI("WiFi", "WiFi disconnected");
       WiFi.disconnect(true);
       WiFi.mode(WIFI_OFF);
 
@@ -456,18 +528,20 @@ void enableWifi(void * arg) {
   // config time logging with NTP server
   configTime(28800, 0, "pool.ntp.org");  // 60x60x8=28800, +8h for Hong Kong
 
-  while (!testState) {  // when user inputting
+  while (!status.testState || resumeAfterCutOff) {  // when user inputting, or resume
     // get time
     struct tm timeinfo;
     while (!getLocalTime(&timeinfo)) {
-      Serial.println("Fail to obtain time");
+      ESP_LOGE("NTP time", "Fail to obtain time");
       vTaskDelay(UINT_MAX); // stop here if fail to get the time
     }
     strftime(dateTime, 64, "%d %b, %y %H:%M:%S", &timeinfo);
-    vTaskDelay(1000);
+    vTaskDelay(500);  // to match the tft update interval
+    resumeAfterCutOff = false;  // delay first, to prevent unexpected problem
   }
 
   //disconnect WiFi
+  ESP_LOGI("WiFi", "WiFi disconnected");
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
 

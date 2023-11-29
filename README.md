@@ -1,6 +1,12 @@
 # AGIS-Longevity-Tester-firmware
 The firmware for AGIS Longevity Tester
 
+# important Notice
++ The LVGL library have change recently, there is a bug on using `lv_table_set_cell_value_fmt` function
++ This function allocate not enough memory for user input string. As a result, it is normal that the last character disappear in each table box using fmt
++ If want to fix it, in LVGL -> lv_table.c file -> Line 194 -> change `len` to `len + 1`
++ I saw somebody raise this problem already, I think it will be solved within serval days, so I am not going to change anything <- plz delete this notice after this bug is fixed
+
 ## Description
 - for cases that failure happened but cannot do homing (stopped or still testing):
     1. double press `*` -> if it can do homing, then it should be program problem
@@ -11,6 +17,9 @@ The firmware for AGIS Longevity Tester
     - plz don't try to do sth strange
 - OTA can be use only after the test end, go to 192.168.0.227/update for update
 - better not to start the testing before get the time
+- do not use esp.restart() to test the resume function
+- ~~after cut off the power supply, ~~~~DO NOT reconnect within 20 sec~~~~ DO NOT reconnect and cut off again within 20 sec~~
+- after resume (after cut off power), **NEVER** cut off the power in that cycle
 
 ## Keypad key functions:
 + number keys 0->9: numbers for input fields
