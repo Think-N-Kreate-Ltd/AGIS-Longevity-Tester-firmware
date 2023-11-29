@@ -90,6 +90,8 @@ void IRAM_ATTR timeCount() {
 void setup() {
   Serial.begin(115200);
   pinMode(TFT_CS, OUTPUT);
+  pinMode(TFT_LED, OUTPUT);
+  digitalWrite(TFT_LED, HIGH);
 
   // set up LittleFS
   // place here because FS must be mount first

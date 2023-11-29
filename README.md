@@ -52,4 +52,4 @@ The firmware for AGIS Longevity Tester
 |    TFT CS   |                           10                           |
 |      DC     |                           13                           |
 |    RESET    |                           14                           |
-|     LED     | 3V3 (can change to GPIO pin to allow toggle backlight) |
+|     LED     |                            9                           |

@@ -7,6 +7,8 @@
 #include <Tester_Keypad.h>
 #include <Tester_common.h>
 
+#define TFT_LED           9
+
 #define T_OUT_UP_INDEX    0
 #define T_OUT_DOWN_INDEX  1
 #define PWM_UP_INDEX      2

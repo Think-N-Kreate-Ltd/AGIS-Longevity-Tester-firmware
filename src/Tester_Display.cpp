@@ -498,7 +498,7 @@ void keypad_read(lv_indev_drv_t * drv, lv_indev_data_t * data){
  * write LED pin to LOW is a method but now is connecting to 3V3
  */
 void setDisplaySleep() {
-  // digitalWrite(TFT_LED, LOW); // to blacken the light
+  digitalWrite(TFT_LED, LOW); // to blacken the light
   digitalWrite(TFT_CS, LOW);
   digitalWrite(TFT_DC, LOW);
   SPI.transfer(0x10);         // enter sleep mode
